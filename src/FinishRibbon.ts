@@ -20,13 +20,13 @@ export class FinishRibbon {
   private breakTimer = 0;
   private ribbonX = GAME_WIDTH + 200;
   private readonly groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
-  private readonly torsoOffset = 176;
+  private readonly torsoOffset = 154;
   private readonly bannerY = this.groundY - this.torsoOffset;
   private readonly bannerWidth = 220;
   private readonly bannerHeight = 12;
   private readonly ribbonAngle = -0.14;
-  private readonly postOffsetX = 126;
-  private readonly postTopY = this.bannerY - 84;
+  private readonly postOffsetX = 132;
+  private readonly postTopY = this.bannerY - 108;
   private readonly breakDuration = 0.42;
   private leftBrokenState: BrokenTapeState = { vx: -210, vy: -120, rotationSpeed: -2.2 };
   private rightBrokenState: BrokenTapeState = { vx: 195, vy: -108, rotationSpeed: 2.05 };
@@ -63,6 +63,9 @@ export class FinishRibbon {
     post.roundRect(-5, 0, 10, postHeight, 4);
     post.fill({ color: 0xa98f98 });
     post.stroke({ color: 0x7e6872, width: 1.5, alpha: 0.8 });
+
+    post.roundRect(-7, -8, 14, 12, 4);
+    post.fill({ color: 0xb7a1aa, alpha: 0.95 });
 
     post.roundRect(-7, postHeight - 18, 14, 18, 5);
     post.fill({ color: 0x8f7781, alpha: 0.9 });
@@ -138,7 +141,7 @@ export class FinishRibbon {
     this.breakTimer = this.breakDuration;
     this.intactRibbon.visible = false;
 
-    const brokenY = Math.max(this.bannerY - 10, Math.min(this.bannerY + 8, playerY - 6));
+    const brokenY = Math.max(this.bannerY - 8, Math.min(this.bannerY + 8, playerY));
     this.leftBrokenRibbon.visible = true;
     this.rightBrokenRibbon.visible = true;
     this.leftBrokenRibbon.position.set(-6, brokenY);

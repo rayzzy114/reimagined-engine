@@ -217,6 +217,7 @@ export class Game {
     this.ctaScreen.update(dt);
     this.hud.update(dt);
     this.particles.update(dt);
+    this.finishRibbon.update(dt);
     this.updateEndZoom(dt);
 
     if (this.state === GameState.START) {
@@ -235,7 +236,6 @@ export class Game {
     this.player.update(dt);
     this.level.update(dt);
     this.updateFinishLine();
-    this.finishRibbon.update(dt);
 
     if (this.damageFlashTimer > 0) {
       this.damageFlashTimer -= dt;
