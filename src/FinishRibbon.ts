@@ -20,6 +20,7 @@ export class FinishRibbon {
   private readonly bannerY = this.groundY - this.torsoOffset;
   private readonly bannerWidth = 248;
   private readonly bannerHeight = 24;
+  private readonly ribbonAngle = -0.22;
   private leftBrokenState: BrokenTapeState = { vx: -180, vy: -140, rotationSpeed: -2.4 };
   private rightBrokenState: BrokenTapeState = { vx: 180, vy: -120, rotationSpeed: 2.1 };
 
@@ -62,29 +63,30 @@ export class FinishRibbon {
     body.roundRect(left, -this.bannerHeight / 2, width, this.bannerHeight, 8);
     body.stroke({ color: 0xc76833, width: 2, alpha: 0.9 });
 
-    for (let x = 0; x <= width; x += 12) {
-      const worldX = left + x;
-      const wave = Math.sin((x / width) * Math.PI * 2);
-
-      rope.circle(worldX, ropeTopY + wave * 1.6, 2.6);
-      rope.fill({ color: 0xd48a54 });
-      rope.circle(worldX, ropeBottomY - wave * 1.4, 2.6);
-      rope.fill({ color: 0xd48a54 });
-    }
-
     rope.moveTo(left, ropeTopY);
-    rope.bezierCurveTo(left + width * 0.25, ropeTopY - 3, left + width * 0.75, ropeTopY + 3, left + width, ropeTopY);
+    rope.lineTo(left + width, ropeTopY);
     rope.stroke({ color: 0x8f4e25, width: 3 });
     rope.moveTo(left, ropeBottomY);
-    rope.bezierCurveTo(
-      left + width * 0.25,
-      ropeBottomY + 3,
-      left + width * 0.75,
-      ropeBottomY - 3,
-      left + width,
-      ropeBottomY
-    );
+    rope.lineTo(left + width, ropeBottomY);
     rope.stroke({ color: 0x8f4e25, width: 3 });
+
+    for (let x = 0; x <= width; x += 12) {
+      const worldX = left + x;
+      rope.circle(worldX, ropeTopY, 2.5);
+      rope.fill({ color: 0xd48a54 });
+      rope.circle(worldX, ropeBottomY, 2.5);
+      rope.fill({ color: 0xd48a54 });
+
+      if (x < width) {
+        const nextX = Math.min(left + width, worldX + 8);
+        rope.moveTo(worldX, ropeTopY - 2);
+        rope.lineTo(nextX, ropeTopY + 2);
+        rope.stroke({ color: 0xe0a16e, width: 1.2, alpha: 0.8 });
+        rope.moveTo(worldX, ropeBottomY - 2);
+        rope.lineTo(nextX, ropeBottomY + 2);
+        rope.stroke({ color: 0xe0a16e, width: 1.2, alpha: 0.8 });
+      }
+    }
 
     segment.addChild(body);
     segment.addChild(rope);
@@ -93,6 +95,7 @@ export class FinishRibbon {
 
   private layoutRibbon() {
     this.intactRibbon.position.set(0, this.bannerY);
+    this.intactRibbon.rotation = this.ribbonAngle;
   }
 
   show() {
@@ -117,8 +120,8 @@ export class FinishRibbon {
     this.rightBrokenRibbon.visible = true;
     this.leftBrokenRibbon.position.set(-8, brokenY);
     this.rightBrokenRibbon.position.set(8, brokenY);
-    this.leftBrokenRibbon.rotation = -0.04;
-    this.rightBrokenRibbon.rotation = 0.04;
+    this.leftBrokenRibbon.rotation = this.ribbonAngle - 0.08;
+    this.rightBrokenRibbon.rotation = this.ribbonAngle + 0.12;
   }
 
   update(dt: number) {
