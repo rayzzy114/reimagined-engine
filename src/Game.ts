@@ -13,6 +13,8 @@ import { LoseScreen } from "./screens/LoseScreen";
 import { CTAScreen } from "./screens/CTAScreen";
 import { PraisePopup } from "./PraisePopup";
 import { SoundManager } from "./utils/sounds";
+import { inflateBounds, intersects, isCollectibleCollected, shrinkBounds } from "./utils/collision";
+import { shouldShowHudFooter } from "./utils/uiState";
 
 export enum GameState {
   START = "start",
@@ -129,7 +131,7 @@ export class Game {
     this.winScreen.container.visible = newState === GameState.WIN;
     this.loseScreen.container.visible = newState === GameState.LOSE;
     this.ctaScreen.container.visible = newState === GameState.CTA;
-    this.hud.setFooterVisible(newState !== GameState.WIN && newState !== GameState.LOSE && newState !== GameState.CTA);
+    this.hud.setFooterVisible(shouldShowHudFooter(newState));
 
     if (newState === GameState.WIN) {
       this.sounds.playWin();
@@ -236,8 +238,8 @@ export class Game {
     for (const collectible of this.level.getActiveCollectibles()) {
       if (collectible.collected) continue;
 
-      const collectibleBounds = this.inflateBounds(collectible.getBounds(), PICKUP_RADIUS * 0.15);
-      if (this.intersects(playerBounds, collectibleBounds)) {
+      const collectibleBounds = collectible.getBounds();
+      if (isCollectibleCollected(playerBounds, collectibleBounds, PICKUP_RADIUS)) {
         collectible.collect();
         this.money += COLLECTIBLE_VALUE;
         this.collectCount++;
@@ -259,8 +261,8 @@ export class Game {
     // Enemies
     if (!this.isInvincible) {
       for (const enemy of this.level.getActiveEnemies()) {
-        const enemyBounds = this.shrinkBounds(enemy.getBounds(), 18);
-        if (!enemy.hit && this.intersects(playerBounds, enemyBounds)) {
+        const enemyBounds = shrinkBounds(enemy.getBounds(), 18);
+        if (!enemy.hit && intersects(playerBounds, enemyBounds)) {
           enemy.onHit();
           this.lives--;
           this.hud.updateLives(this.lives);
@@ -284,8 +286,8 @@ export class Game {
     // Obstacles
     if (!this.isInvincible) {
       for (const obstacle of this.level.getActiveObstacles()) {
-        const obstacleBounds = this.shrinkBounds(obstacle.getBounds(), 14);
-        if (this.intersects(playerBounds, obstacleBounds)) {
+        const obstacleBounds = shrinkBounds(obstacle.getBounds(), 14);
+        if (intersects(playerBounds, obstacleBounds)) {
           this.lives--;
           this.hud.updateLives(this.lives);
 
@@ -317,42 +319,6 @@ export class Game {
     this.damageFlashTimer = 0.18;
     this.damageFlash.visible = true;
     this.damageFlash.alpha = 0.22;
-  }
-
-  private intersects(
-    a: { x: number; y: number; width: number; height: number },
-    b: { x: number; y: number; width: number; height: number }
-  ): boolean {
-    return (
-      a.x < b.x + b.width &&
-      a.x + a.width > b.x &&
-      a.y < b.y + b.height &&
-      a.y + a.height > b.y
-    );
-  }
-
-  private inflateBounds(
-    bounds: { x: number; y: number; width: number; height: number },
-    padding: number
-  ) {
-    return {
-      x: bounds.x - padding,
-      y: bounds.y - padding,
-      width: bounds.width + padding * 2,
-      height: bounds.height + padding * 2,
-    };
-  }
-
-  private shrinkBounds(
-    bounds: { x: number; y: number; width: number; height: number },
-    padding: number
-  ) {
-    return {
-      x: bounds.x + padding,
-      y: bounds.y + padding,
-      width: Math.max(0, bounds.width - padding * 2),
-      height: Math.max(0, bounds.height - padding * 2),
-    };
   }
 
   private shakeScreen() {
