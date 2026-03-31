@@ -54,6 +54,8 @@ export class Game {
   private invincibilityTimer = 0;
   private praiseIndex = 0;
   private collectCount = 0;
+  private nearMissCount = 0;
+  private lastNearMissLabel: string | null = null;
 
   constructor(app: Application) {
     this.app = app;
@@ -308,10 +310,53 @@ export class Game {
       }
     }
 
+    if (!this.isInvincible) {
+      this.checkNearMisses(playerBounds, playerFeetBounds);
+    }
+
     // Finish
     if (this.level.isFinishReached()) {
       this.finishRibbon.breakRibbon(playerBounds.y + playerBounds.height / 2);
       this.setState(GameState.WIN);
+    }
+  }
+
+  private checkNearMisses(
+    playerBounds: { x: number; y: number; width: number; height: number },
+    playerFeetBounds: { x: number; y: number; width: number; height: number }
+  ) {
+    const playerCenterX = playerBounds.x + playerBounds.width / 2;
+    const playerCenterY = playerBounds.y + playerBounds.height / 2;
+    const playerFeetCenterY = playerFeetBounds.y + playerFeetBounds.height / 2;
+
+    for (const enemy of this.level.getActiveEnemies()) {
+      if (enemy.nearMissAwarded || enemy.hit) continue;
+
+      const enemyBounds = shrinkBounds(enemy.getBounds(), 10);
+      const enemyRight = enemyBounds.x + enemyBounds.width;
+      const enemyCenterY = enemyBounds.y + enemyBounds.height / 2;
+      const passedRecently = enemyRight < playerCenterX && enemyRight > playerCenterX - 72;
+      const verticalClose = Math.abs(enemyCenterY - playerCenterY) <= 82;
+
+      if (passedRecently && verticalClose) {
+        enemy.nearMissAwarded = true;
+        this.triggerNearMiss(enemyBounds.x + enemyBounds.width / 2, enemyBounds.y - 48);
+      }
+    }
+
+    for (const obstacle of this.level.getActiveObstacles()) {
+      if (obstacle.nearMissAwarded) continue;
+
+      const obstacleBounds = obstacle.getBounds();
+      const obstacleRight = obstacleBounds.x + obstacleBounds.width;
+      const obstacleCenterY = obstacleBounds.y + obstacleBounds.height / 2;
+      const passedRecently = obstacleRight < playerCenterX && obstacleRight > playerCenterX - 68;
+      const verticalClose = Math.abs(obstacleCenterY - playerFeetCenterY) <= 70;
+
+      if (passedRecently && verticalClose) {
+        obstacle.nearMissAwarded = true;
+        this.triggerNearMiss(obstacleBounds.x + obstacleBounds.width / 2, obstacleBounds.y - 42);
+      }
     }
   }
 
@@ -352,6 +397,8 @@ export class Game {
       state: this.state,
       lives: this.lives,
       money: this.money,
+      nearMissCount: this.nearMissCount,
+      lastNearMissLabel: this.lastNearMissLabel,
       footerVisible: this.hud.isFooterVisible(),
       hud: this.hud.getDebugMeta(),
       jackpot: this.level.getJackpotDebug(),
@@ -383,6 +430,10 @@ export class Game {
     this.hud.spawnRewardFly(this.resolveRewardFlyTexture(), 220, 540, () => this.hud.triggerCounterPop());
   }
 
+  debugTriggerNearMiss() {
+    this.triggerNearMiss(260, 520);
+  }
+
   debugSetDistance(distance: number) {
     this.level.setCurrentDistance(distance);
     this.level.update(0);
@@ -405,6 +456,16 @@ export class Game {
     this.triggerDamageFlash();
     this.shakeScreen();
     return false;
+  }
+
+  private triggerNearMiss(x: number, y: number) {
+    this.nearMissCount++;
+    this.lastNearMissLabel = "Close call!";
+    this.money += COLLECTIBLE_VALUE;
+    this.hud.updateMoney(this.money);
+    this.praisePopup.show("Close call!", x, y);
+    this.sounds.playCollect();
+    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(), x, y, () => this.hud.triggerCounterPop());
   }
 
   private resolveRewardFlyTexture() {

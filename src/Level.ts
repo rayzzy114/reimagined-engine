@@ -12,6 +12,7 @@ export interface ActiveEntity {
   active: boolean;
   collected: boolean;
   hit: boolean;
+  nearMissAwarded: boolean;
   flags?: EntityFlag[];
   warningLabel?: Text;
   kind?: string;
@@ -187,6 +188,7 @@ export class Level {
       active: true,
       collected: false,
       hit: false,
+      nearMissAwarded: false,
       flags: item.flags ? [...item.flags] : undefined,
       warningLabel,
       kind: item.flags?.includes(EntityFlag.JACKPOT) ? "jackpot_paypal" : item.type === EntityType.OBSTACLE ? "cone" : undefined,

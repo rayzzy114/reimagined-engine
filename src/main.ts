@@ -12,6 +12,7 @@ declare global {
       tap: () => void;
       obstacleHit: () => void;
       spawnRewardFly: () => void;
+      triggerNearMiss: () => void;
     };
   }
 }
@@ -55,6 +56,7 @@ async function init() {
     tap: () => game.debugTap(),
     obstacleHit: () => game.debugObstacleHit(),
     spawnRewardFly: () => game.debugSpawnRewardFly(),
+    triggerNearMiss: () => game.debugTriggerNearMiss(),
   };
 }
 

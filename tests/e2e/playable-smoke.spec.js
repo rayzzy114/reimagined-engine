@@ -113,6 +113,29 @@ test("jackpot moment is scripted near the finish", async ({ page }) => {
     });
 });
 
+test("near-miss bonus adds money and surfaces feedback", async ({ page }) => {
+  await page.goto(playableUrl);
+  await page.waitForSelector("canvas");
+  await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
+
+  await page.evaluate(() => {
+    window.__PLAYABLE_TEST_API__?.setState("playing");
+    window.__PLAYABLE_TEST_API__?.triggerNearMiss();
+  });
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot()))
+    .toMatchObject({
+      money: 20,
+      nearMissCount: 1,
+      lastNearMissLabel: "Close call!",
+    });
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().hud.counterPopActive))
+    .toBe(true);
+});
+
 test("win state uses the payoff overlay style without the sky burst", async ({ page }) => {
   await page.goto(playableUrl);
   await page.waitForSelector("canvas");
