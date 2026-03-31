@@ -154,6 +154,10 @@ export class HUD {
     this.moneyText.text = `$${amount}`;
   }
 
+  setFooterVisible(value: boolean) {
+    this.footerContainer.visible = value;
+  }
+
   setMuted(value: boolean) {
     this.muted = value;
     this.muteSlash.visible = value;

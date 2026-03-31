@@ -3,7 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
 
 export class WinScreen {
   container: Container;
-  private rewardText: Text;
+  private rewardAmountText: Text;
   private getMoney: () => number;
 
   constructor(onContinue: () => void, getMoney: () => number) {
@@ -13,7 +13,7 @@ export class WinScreen {
 
     const overlay = new Graphics();
     overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x090d1f, alpha: 0.7 });
+    overlay.fill({ color: 0x090d1f, alpha: 0.66 });
     this.container.addChild(overlay);
 
     const lightsTex = Assets.get("lights") as Texture;
@@ -21,9 +21,9 @@ export class WinScreen {
       const lights = new Sprite(lightsTex);
       lights.anchor.set(0.5);
       lights.x = GAME_WIDTH / 2;
-      lights.y = GAME_HEIGHT * 0.23;
-      lights.scale.set(1.55);
-      lights.alpha = 0.52;
+      lights.y = GAME_HEIGHT * 0.22;
+      lights.scale.set(1.42);
+      lights.alpha = 0.42;
       this.container.addChild(lights);
     }
 
@@ -32,8 +32,8 @@ export class WinScreen {
       const card = new Sprite(paypalCardTex);
       card.anchor.set(0.5);
       card.x = GAME_WIDTH / 2;
-      card.y = GAME_HEIGHT * 0.44;
-      card.scale.set(0.36);
+      card.y = GAME_HEIGHT * 0.47;
+      card.scale.set(0.33);
       this.container.addChild(card);
     }
 
@@ -49,7 +49,7 @@ export class WinScreen {
     });
     title.anchor.set(0.5);
     title.x = GAME_WIDTH / 2;
-    title.y = GAME_HEIGHT * 0.3;
+    title.y = GAME_HEIGHT * 0.285;
     this.container.addChild(title);
 
     const subtitle = new Text({
@@ -63,36 +63,52 @@ export class WinScreen {
     });
     subtitle.anchor.set(0.5);
     subtitle.x = GAME_WIDTH / 2;
-    subtitle.y = GAME_HEIGHT * 0.38;
+    subtitle.y = GAME_HEIGHT * 0.345;
     this.container.addChild(subtitle);
 
-    const coinTex = Assets.get("coin") as Texture;
-    if (coinTex) {
-      const coinBanner = new Sprite(coinTex);
-      coinBanner.anchor.set(0.5);
-      coinBanner.x = GAME_WIDTH / 2;
-      coinBanner.y = GAME_HEIGHT * 0.61;
-      coinBanner.scale.set(0.86);
-      this.container.addChild(coinBanner);
+    const amountCard = new Container();
+    amountCard.x = GAME_WIDTH / 2;
+    amountCard.y = GAME_HEIGHT * 0.61;
+
+    const amountShadow = new Graphics();
+    amountShadow.roundRect(-162, -28, 324, 56, 18);
+    amountShadow.fill({ color: 0x000000, alpha: 0.18 });
+    amountCard.addChild(amountShadow);
+
+    const amountBg = new Graphics();
+    amountBg.roundRect(-160, -30, 320, 60, 18);
+    amountBg.fill({ color: 0xffffff });
+    amountBg.stroke({ color: 0x1d4fb0, width: 4 });
+    amountCard.addChild(amountBg);
+
+    const amountLogoTex = Assets.get("paypalCounter") as Texture;
+    if (amountLogoTex) {
+      const amountLogo = new Sprite(amountLogoTex);
+      amountLogo.anchor.set(0.5);
+      amountLogo.x = -90;
+      amountLogo.y = 0;
+      amountLogo.scale.set(0.42);
+      amountCard.addChild(amountLogo);
     }
 
-    this.rewardText = new Text({
+    this.rewardAmountText = new Text({
       text: "$0",
       style: new TextStyle({
         fontFamily: "PP Mori",
-        fontSize: 42,
+        fontSize: 40,
         fontWeight: "bold",
         fill: 0xffffff,
         stroke: { color: 0x143d8c, width: 4 },
       }),
     });
-    this.rewardText.anchor.set(0.5);
-    this.rewardText.x = GAME_WIDTH / 2;
-    this.rewardText.y = GAME_HEIGHT * 0.61;
-    this.container.addChild(this.rewardText);
+    this.rewardAmountText.anchor.set(0.5, 0.5);
+    this.rewardAmountText.x = 92;
+    this.rewardAmountText.y = 1;
+    amountCard.addChild(this.rewardAmountText);
+    this.container.addChild(amountCard);
 
     const btnBg = new Graphics();
-    btnBg.roundRect(GAME_WIDTH / 2 - 150, GAME_HEIGHT * 0.75, 300, 72, 18);
+    btnBg.roundRect(GAME_WIDTH / 2 - 132, GAME_HEIGHT * 0.765, 264, 62, 16);
     btnBg.fill({ color: 0xff8800 });
     this.container.addChild(btnBg);
 
@@ -107,11 +123,11 @@ export class WinScreen {
     });
     btnText.anchor.set(0.5);
     btnText.x = GAME_WIDTH / 2;
-    btnText.y = GAME_HEIGHT * 0.75 + 36;
+    btnText.y = GAME_HEIGHT * 0.765 + 31;
     this.container.addChild(btnText);
   }
 
   show(money: number) {
-    this.rewardText.text = `$${money}`;
+    this.rewardAmountText.text = `$${money}`;
   }
 }

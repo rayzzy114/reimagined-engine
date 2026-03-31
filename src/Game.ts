@@ -129,6 +129,7 @@ export class Game {
     this.winScreen.container.visible = newState === GameState.WIN;
     this.loseScreen.container.visible = newState === GameState.LOSE;
     this.ctaScreen.container.visible = newState === GameState.CTA;
+    this.hud.setFooterVisible(newState !== GameState.WIN && newState !== GameState.LOSE && newState !== GameState.CTA);
 
     if (newState === GameState.WIN) {
       this.sounds.playWin();
