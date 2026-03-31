@@ -6,7 +6,7 @@ export const JUMP_HEIGHT = 300;
 export const JUMP_DURATION = 800;
 
 export const COLLECTIBLE_VALUE = 20;
-export const PICKUP_RADIUS = 60;
+export const PICKUP_RADIUS = 80;
 
 export const ENEMY_CHASE_SPEED = 300;
 

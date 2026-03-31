@@ -1,4 +1,4 @@
-import { Container, Text, TextStyle, Graphics } from "pixi.js";
+import { Assets, Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
 
 export class LoseScreen {
@@ -13,6 +13,16 @@ export class LoseScreen {
     overlay.fill({ color: 0x000000, alpha: 0.6 });
     this.container.addChild(overlay);
 
+    const failTex = Assets.get("failImage") as Texture;
+    if (failTex) {
+      const failSprite = new Sprite(failTex);
+      failSprite.anchor.set(0.5);
+      failSprite.x = GAME_WIDTH / 2;
+      failSprite.y = GAME_HEIGHT * 0.42;
+      failSprite.scale.set(1.2);
+      this.container.addChild(failSprite);
+    }
+
     const title = new Text({
       text: "You didn't make it!",
       style: new TextStyle({
@@ -25,7 +35,7 @@ export class LoseScreen {
     });
     title.anchor.set(0.5);
     title.x = GAME_WIDTH / 2;
-    title.y = GAME_HEIGHT * 0.35;
+    title.y = GAME_HEIGHT * 0.25;
     this.container.addChild(title);
 
     const subtitle = new Text({
@@ -39,12 +49,12 @@ export class LoseScreen {
     });
     subtitle.anchor.set(0.5);
     subtitle.x = GAME_WIDTH / 2;
-    subtitle.y = GAME_HEIGHT * 0.43;
+    subtitle.y = GAME_HEIGHT * 0.58;
     this.container.addChild(subtitle);
 
     // Download button
     const btnBg = new Graphics();
-    btnBg.roundRect(GAME_WIDTH / 2 - 120, GAME_HEIGHT * 0.53, 240, 60, 15);
+    btnBg.roundRect(GAME_WIDTH / 2 - 120, GAME_HEIGHT * 0.66, 240, 60, 15);
     btnBg.fill({ color: 0xff8800 });
     this.container.addChild(btnBg);
 
@@ -59,7 +69,7 @@ export class LoseScreen {
     });
     btnText.anchor.set(0.5);
     btnText.x = GAME_WIDTH / 2;
-    btnText.y = GAME_HEIGHT * 0.53 + 30;
+    btnText.y = GAME_HEIGHT * 0.66 + 30;
     this.container.addChild(btnText);
   }
 }

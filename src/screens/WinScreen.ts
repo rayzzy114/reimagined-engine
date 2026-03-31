@@ -1,4 +1,4 @@
-import { Container, Text, TextStyle, Graphics } from "pixi.js";
+import { Assets, Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
 
 export class WinScreen {
@@ -15,6 +15,17 @@ export class WinScreen {
     overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     overlay.fill({ color: 0x000000, alpha: 0.6 });
     this.container.addChild(overlay);
+
+    const lightsTex = Assets.get("lights") as Texture;
+    if (lightsTex) {
+      const lights = new Sprite(lightsTex);
+      lights.anchor.set(0.5);
+      lights.x = GAME_WIDTH / 2;
+      lights.y = GAME_HEIGHT * 0.32;
+      lights.scale.set(0.9);
+      lights.alpha = 0.45;
+      this.container.addChild(lights);
+    }
 
     const title = new Text({
       text: "Congratulations!",
@@ -45,6 +56,16 @@ export class WinScreen {
     subtitle.y = GAME_HEIGHT * 0.38;
     this.container.addChild(subtitle);
 
+    const coinTex = Assets.get("coin") as Texture;
+    if (coinTex) {
+      const coinBanner = new Sprite(coinTex);
+      coinBanner.anchor.set(0.5);
+      coinBanner.x = GAME_WIDTH / 2;
+      coinBanner.y = GAME_HEIGHT * 0.53;
+      coinBanner.scale.set(0.78);
+      this.container.addChild(coinBanner);
+    }
+
     this.rewardText = new Text({
       text: "Your reward: $0",
       style: new TextStyle({
@@ -57,12 +78,12 @@ export class WinScreen {
     });
     this.rewardText.anchor.set(0.5);
     this.rewardText.x = GAME_WIDTH / 2;
-    this.rewardText.y = GAME_HEIGHT * 0.48;
+    this.rewardText.y = GAME_HEIGHT * 0.56;
     this.container.addChild(this.rewardText);
 
     // Claim button
     const btnBg = new Graphics();
-    btnBg.roundRect(GAME_WIDTH / 2 - 120, GAME_HEIGHT * 0.58, 240, 60, 15);
+    btnBg.roundRect(GAME_WIDTH / 2 - 120, GAME_HEIGHT * 0.68, 240, 60, 15);
     btnBg.fill({ color: 0xff8800 });
     this.container.addChild(btnBg);
 
@@ -77,7 +98,7 @@ export class WinScreen {
     });
     btnText.anchor.set(0.5);
     btnText.x = GAME_WIDTH / 2;
-    btnText.y = GAME_HEIGHT * 0.58 + 30;
+    btnText.y = GAME_HEIGHT * 0.68 + 30;
     this.container.addChild(btnText);
   }
 

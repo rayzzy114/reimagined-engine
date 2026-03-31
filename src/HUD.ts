@@ -23,26 +23,23 @@ export class HUD {
     }
     this.container.addChild(heartContainer);
 
-    // PayPal money counter
     const moneyContainer = new Container();
     moneyContainer.x = GAME_WIDTH - 180;
     moneyContainer.y = 30;
 
-    // PayPal counter bg
     const paypalBg = new Graphics();
     paypalBg.roundRect(0, 0, 160, 50, 12);
     paypalBg.fill({ color: 0xffffff });
     paypalBg.stroke({ color: 0x0070ba, width: 2 });
     moneyContainer.addChild(paypalBg);
 
-    // PayPal icon (using counter image or drawing P logo)
-    const paypalIcon = new Graphics();
-    paypalIcon.circle(22, 25, 14);
-    paypalIcon.fill({ color: 0x0070ba });
-    moneyContainer.addChild(paypalIcon);
+    const moneyPill = new Graphics();
+    moneyPill.circle(22, 25, 14);
+    moneyPill.fill({ color: 0x0070ba });
+    moneyContainer.addChild(moneyPill);
 
-    const pText = new Text({
-      text: "P",
+    const moneySymbol = new Text({
+      text: "$",
       style: new TextStyle({
         fontFamily: "Arial",
         fontSize: 18,
@@ -50,9 +47,10 @@ export class HUD {
         fill: 0xffffff,
       }),
     });
-    pText.x = 15;
-    pText.y = 13;
-    moneyContainer.addChild(pText);
+    moneySymbol.anchor.set(0.5);
+    moneySymbol.x = 22;
+    moneySymbol.y = 25;
+    moneyContainer.addChild(moneySymbol);
 
     this.moneyText = new Text({
       text: "$0",
@@ -69,46 +67,24 @@ export class HUD {
 
     this.container.addChild(moneyContainer);
 
-    // Footer / bottom bar
     this.footerContainer = new Container();
     this.footerContainer.y = GAME_HEIGHT - 90;
 
-    const footerBg = new Graphics();
-    footerBg.roundRect(0, 0, GAME_WIDTH, 90, 20);
-    footerBg.fill({ color: 0x6b4fa0 });
-    this.footerContainer.addChild(footerBg);
-
-    const playoffText = new Text({
-      text: "Playoff",
-      style: new TextStyle({
-        fontFamily: "Arial",
-        fontSize: 32,
-        fontWeight: "bold",
-        fill: 0xffffff,
-      }),
-    });
-    playoffText.x = 30;
-    playoffText.y = 25;
-    this.footerContainer.addChild(playoffText);
-
-    // Download button
-    const dlBtn = new Graphics();
-    dlBtn.roundRect(GAME_WIDTH - 190, 18, 160, 50, 12);
-    dlBtn.fill({ color: 0xff8800 });
-    this.footerContainer.addChild(dlBtn);
-
-    const dlText = new Text({
-      text: "DOWNLOAD",
-      style: new TextStyle({
-        fontFamily: "Arial",
-        fontSize: 22,
-        fontWeight: "bold",
-        fill: 0xffffff,
-      }),
-    });
-    dlText.x = GAME_WIDTH - 172;
-    dlText.y = 30;
-    this.footerContainer.addChild(dlText);
+    const footerTex = Assets.get("footerPortrait") as Texture;
+    if (footerTex) {
+      const footerSprite = new Sprite(footerTex);
+      footerSprite.x = 0;
+      footerSprite.y = 0;
+      footerSprite.width = GAME_WIDTH;
+      footerSprite.height = 90;
+      this.footerContainer.addChild(footerSprite);
+    }
+    if (!footerTex) {
+      const footerBg = new Graphics();
+      footerBg.roundRect(0, 0, GAME_WIDTH, 90, 20);
+      footerBg.fill({ color: 0x6b4fa0 });
+      this.footerContainer.addChild(footerBg);
+    }
 
     this.container.addChild(this.footerContainer);
   }

@@ -175,7 +175,7 @@ export class Game {
   }
 
   private checkCollisions() {
-    const playerBounds = this.player.getBounds();
+    const playerBounds = this.inflateBounds(this.player.getBounds(), 10);
 
     // Collectibles
     for (const collectible of this.level.getActiveCollectibles()) {
@@ -266,6 +266,18 @@ export class Game {
       a.y < b.y + b.height &&
       a.y + a.height > b.y
     );
+  }
+
+  private inflateBounds(
+    bounds: { x: number; y: number; width: number; height: number },
+    padding: number
+  ) {
+    return {
+      x: bounds.x - padding,
+      y: bounds.y - padding,
+      width: bounds.width + padding * 2,
+      height: bounds.height + padding * 2,
+    };
   }
 
   private shakeScreen() {

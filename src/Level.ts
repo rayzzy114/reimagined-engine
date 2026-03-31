@@ -51,7 +51,6 @@ export class Level {
       if (!entity.active) continue;
 
       entity.x -= BASE_SPEED * dt;
-      entity.sprite.x = entity.x;
 
       // Enemy chase
       if (entity.type === EntityType.ENEMY && !entity.hit && entity.x < GAME_WIDTH * 0.7) {
@@ -84,6 +83,8 @@ export class Level {
         entity.warningLabel.y = entity.y - 100;
         entity.warningLabel.visible = entity.x < GAME_WIDTH + 50;
       }
+
+      entity.sprite.x = entity.x;
     }
 
     // Check finish
