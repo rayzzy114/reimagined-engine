@@ -214,24 +214,38 @@ export class Game {
           this.isInvincible = true;
           this.invincibilityTimer = INVINCIBILITY_DURATION;
           this.player.setInvincible(true);
+          this.player.playHurt();
           this.shakeScreen();
         }
       }
     }
 
     // Obstacles
-    for (const obstacle of this.level.getActiveObstacles()) {
-      if (!this.player.isOnGround()) continue;
-      const obsBounds = obstacle.getBounds();
-      const shrunk = {
-        x: obsBounds.x + 10,
-        y: obsBounds.y + 10,
-        width: obsBounds.width - 20,
-        height: obsBounds.height - 20,
-      };
-      if (this.intersects(playerBounds, shrunk)) {
-        this.setState(GameState.LOSE);
-        return;
+    if (!this.isInvincible) {
+      for (const obstacle of this.level.getActiveObstacles()) {
+        const obsBounds = obstacle.getBounds();
+        const shrunk = {
+          x: obsBounds.x + 10,
+          y: obsBounds.y + 10,
+          width: obsBounds.width - 20,
+          height: obsBounds.height - 20,
+        };
+        if (this.intersects(playerBounds, shrunk)) {
+          this.lives--;
+          this.hud.updateLives(this.lives);
+
+          if (this.lives <= 0) {
+            this.setState(GameState.LOSE);
+            return;
+          }
+
+          this.isInvincible = true;
+          this.invincibilityTimer = INVINCIBILITY_DURATION;
+          this.player.setInvincible(true);
+          this.player.playHurt();
+          this.shakeScreen();
+          break;
+        }
       }
     }
 

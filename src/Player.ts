@@ -1,5 +1,5 @@
-import { Container, AnimatedSprite, Texture } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X_RATIO, JUMP_HEIGHT, JUMP_DURATION } from "./utils/constants";
+import { Container, AnimatedSprite, Texture, Color } from "pixi.js";
+import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X_RATIO, JUMP_HEIGHT, JUMP_DURATION, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
 import { runnerSpritesheet } from "./utils/assets";
 
 export class Player {
@@ -16,7 +16,7 @@ export class Player {
 
   constructor() {
     this.container = new Container();
-    this.groundY = GAME_HEIGHT * 0.72;
+    this.groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
 
     const runFrames = runnerSpritesheet.animations["run"];
     const jumpFrames = runnerSpritesheet.animations["jump"];
@@ -24,18 +24,18 @@ export class Player {
 
     this.runAnim = new AnimatedSprite(runFrames);
     this.runAnim.anchor.set(0.5, 1);
-    this.runAnim.animationSpeed = 0.2;
+    this.runAnim.animationSpeed = 0.15;
     this.runAnim.play();
 
     this.jumpAnim = new AnimatedSprite(jumpFrames);
     this.jumpAnim.anchor.set(0.5, 1);
-    this.jumpAnim.animationSpeed = 0.15;
+    this.jumpAnim.animationSpeed = 0.225;
     this.jumpAnim.loop = false;
     this.jumpAnim.visible = false;
 
     this.hurtAnim = new AnimatedSprite(hurtFrames);
     this.hurtAnim.anchor.set(0.5, 1);
-    this.hurtAnim.animationSpeed = 0.15;
+    this.hurtAnim.animationSpeed = 0.30;
     this.hurtAnim.loop = false;
     this.hurtAnim.visible = false;
 
@@ -45,6 +45,7 @@ export class Player {
 
     this.currentAnim = this.runAnim;
 
+    this.container.scale.set(0.54);
     this.container.x = GAME_WIDTH * PLAYER_X_RATIO;
     this.container.y = this.groundY;
   }
@@ -53,6 +54,7 @@ export class Player {
     if (this.currentAnim === anim) return;
     this.currentAnim.visible = false;
     this.currentAnim.stop();
+    this.currentAnim.tint = 0xFFFFFF; // Reset tint on switch
     this.currentAnim = anim;
     this.currentAnim.visible = true;
     this.currentAnim.gotoAndPlay(0);
@@ -91,14 +93,14 @@ export class Player {
 
     if (this.invincible) {
       this.blinkTimer += dt;
-      this.currentAnim.alpha = Math.sin(this.blinkTimer * 20) > 0 ? 1 : 0.3;
+      this.currentAnim.tint = Math.sin(this.blinkTimer * 30) > 0 ? 0xFF2244 : 0xFFFFFF;
     }
   }
 
   setInvincible(value: boolean) {
     this.invincible = value;
     if (!value) {
-      this.currentAnim.alpha = 1;
+      this.currentAnim.tint = 0xFFFFFF;
       this.blinkTimer = 0;
     }
   }
@@ -108,12 +110,21 @@ export class Player {
   }
 
   getBounds() {
+    // Reference Hitbox: scale {X: 0.25, Y: 0.7}, offset {X: 0, Y: -0.15}
     const anim = this.currentAnim;
-    const w = anim.width * 0.6;
-    const h = anim.height * 0.8;
+    const spriteW = anim.width;
+    const spriteH = anim.height;
+    
+    const w = spriteW * 0.25;
+    const h = spriteH * 0.7;
+    
+    // Offset is relative to center. Anchor is (0.5, 1).
+    // Sprite center Y is at container.y - spriteH/2.
+    const centerY = this.container.y - spriteH/2 + (-0.15 * spriteH);
+    
     return {
       x: this.container.x - w / 2,
-      y: this.container.y - h,
+      y: centerY - h / 2,
       width: w,
       height: h,
     };

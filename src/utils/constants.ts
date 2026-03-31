@@ -16,7 +16,7 @@ export const INVINCIBILITY_DURATION = 500;
 export const FINISH_DISTANCE = 18;
 
 export const PLAYER_X_RATIO = 0.18;
-export const PLAYER_GROUND_Y_RATIO = 0.75;
+export const PLAYER_GROUND_Y_RATIO = 0.78125;
 
 export enum EntityType {
   COLLECTIBLE = "collectible",

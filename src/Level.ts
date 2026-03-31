@@ -1,9 +1,11 @@
 import { Container, Sprite, AnimatedSprite, Texture, Assets, Text, TextStyle } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, LEVEL_DATA, EntityType, EntityFlag, ENEMY_CHASE_SPEED, PLAYER_X_RATIO, LevelItem } from "./utils/constants";
+import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, LEVEL_DATA, EntityType, EntityFlag, ENEMY_CHASE_SPEED, PLAYER_X_RATIO, LevelItem, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
 import { thiefSpritesheet } from "./utils/assets";
 
 export interface ActiveEntity {
-  sprite: Sprite | AnimatedSprite;
+  sprite: Container; // Use Container to hold sprite + glow
+  mainSprite: Sprite | AnimatedSprite;
+  glow?: Sprite;
   type: EntityType;
   x: number;
   y: number;
@@ -29,7 +31,7 @@ export class Level {
 
   constructor(gameContainer: Container) {
     this.gameContainer = gameContainer;
-    this.groundY = GAME_HEIGHT * 0.72;
+    this.groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
   }
 
   update(dt: number) {
@@ -53,13 +55,20 @@ export class Level {
 
       // Enemy chase
       if (entity.type === EntityType.ENEMY && !entity.hit && entity.x < GAME_WIDTH * 0.7) {
-        entity.x -= ENEMY_CHASE_SPEED * dt * 0.3;
+        entity.x -= ENEMY_CHASE_SPEED * dt;
+      }
+
+      // Glow pulsing
+      if (entity.glow) {
+        const pulse = Math.sin(Date.now() * 0.01) * 0.1 + 0.9;
+        entity.glow.scale.set(pulse * 0.8);
+        entity.glow.alpha = (Math.sin(Date.now() * 0.01) * 0.2 + 0.6) * 0.8;
       }
 
       // Collectible bobbing
       if (entity.type === EntityType.COLLECTIBLE && !entity.collected) {
-        entity.sprite.y = entity.y + Math.sin(Date.now() * 0.005 + entity.x * 0.01) * 5;
-        entity.sprite.rotation = Math.sin(Date.now() * 0.003 + entity.x * 0.02) * 0.1;
+        entity.mainSprite.y = Math.sin(Date.now() * 0.005 + entity.x * 0.01) * 5;
+        entity.mainSprite.rotation = Math.sin(Date.now() * 0.003 + entity.x * 0.02) * 0.1;
       }
 
       // Off-screen removal
@@ -86,29 +95,43 @@ export class Level {
   private spawnEntity(item: LevelItem) {
     if (item.type === EntityType.FINISH) return;
 
-    const x = GAME_WIDTH + 100;
+    const x = 1080;
     const yOffset = item.yOffset || 0;
 
-    let sprite: Sprite | AnimatedSprite;
+    const container = new Container();
+    let mainSprite: Sprite | AnimatedSprite;
+    let glow: Sprite | undefined;
     let y: number;
 
     switch (item.type) {
       case EntityType.COLLECTIBLE: {
         const tex = Assets.get("dollar") as Texture;
         if (!tex) return;
-        sprite = new Sprite(tex);
-        sprite.anchor.set(0.5, 0.5);
-        sprite.scale.set(0.35);
+        mainSprite = new Sprite(tex);
+        mainSprite.anchor.set(0.5, 0.5);
+        mainSprite.scale.set(0.15);
+        
+        const glowTex = Assets.get("coinGlow") as Texture;
+        if (glowTex) {
+          glow = new Sprite(glowTex);
+          glow.anchor.set(0.5);
+          glow.scale.set(0.8);
+          glow.alpha = 0.8;
+          container.addChild(glow);
+        }
+        
+        container.addChild(mainSprite);
         y = this.groundY - yOffset - 40;
         break;
       }
       case EntityType.ENEMY: {
         const frames = thiefSpritesheet.animations["default"];
-        sprite = new AnimatedSprite(frames);
-        sprite.anchor.set(0.5, 1);
-        (sprite as AnimatedSprite).animationSpeed = 0.2;
-        (sprite as AnimatedSprite).play();
-        sprite.scale.set(-0.3, 0.3); // Flip to face left
+        mainSprite = new AnimatedSprite(frames);
+        mainSprite.anchor.set(0.5, 1);
+        (mainSprite as AnimatedSprite).animationSpeed = 0.2;
+        (mainSprite as AnimatedSprite).play();
+        mainSprite.scale.set(-0.702, 0.702); // Flip to face left
+        container.addChild(mainSprite);
         y = this.groundY;
         break;
       }
@@ -117,9 +140,22 @@ export class Level {
         const bushName = bushTextures[Math.floor(Math.random() * bushTextures.length)];
         const tex = Assets.get(bushName) as Texture;
         if (!tex) return;
-        sprite = new Sprite(tex);
-        sprite.anchor.set(0.5, 1);
-        sprite.scale.set(0.5);
+        mainSprite = new Sprite(tex);
+        mainSprite.anchor.set(0.5, 1);
+        mainSprite.scale.set(0.5);
+
+        const glowTex = Assets.get("coinGlow") as Texture;
+        if (glowTex) {
+          glow = new Sprite(glowTex);
+          glow.anchor.set(0.5);
+          glow.y = -mainSprite.height / 2;
+          glow.scale.set(0.8);
+          glow.alpha = 0.8;
+          glow.tint = 0xFF0000;
+          container.addChild(glow);
+        }
+
+        container.addChild(mainSprite);
         y = this.groundY;
         break;
       }
@@ -127,9 +163,9 @@ export class Level {
         return;
     }
 
-    sprite.x = x;
-    sprite.y = y;
-    this.gameContainer.addChild(sprite);
+    container.x = x;
+    container.y = y;
+    this.gameContainer.addChild(container);
 
     let warningLabel: Text | undefined;
     if (item.flags?.includes(EntityFlag.SHOW_WARNING)) {
@@ -149,7 +185,9 @@ export class Level {
     }
 
     const entity: ActiveEntity = {
-      sprite,
+      sprite: container,
+      mainSprite,
+      glow,
       type: item.type,
       x,
       y,
@@ -170,12 +208,28 @@ export class Level {
       },
 
       getBounds() {
-        const s = this.sprite;
-        const w = s.width * 0.7;
-        const h = s.height * 0.8;
+        const s = this.mainSprite;
+        const spriteW = Math.abs(s.width);
+        const spriteH = s.height;
+        
+        if (this.type === EntityType.ENEMY) {
+          // Reference Hitbox: scale {X: 0.3, Y: 0.5}, offset {X: 0, Y: 0.2}
+          const w = spriteW * 0.3;
+          const h = spriteH * 0.5;
+          const centerY = this.y - spriteH / 2 + (0.2 * spriteH);
+          return {
+            x: this.x - w / 2,
+            y: centerY - h / 2,
+            width: w,
+            height: h,
+          };
+        }
+        
+        const w = spriteW * 0.7;
+        const h = spriteH * 0.8;
         return {
           x: this.x - w / 2,
-          y: (this.type === EntityType.ENEMY ? this.y - s.height : this.y - h / 2),
+          y: (this.type === EntityType.COLLECTIBLE ? this.y - h / 2 : this.y - h),
           width: w,
           height: h,
         };
