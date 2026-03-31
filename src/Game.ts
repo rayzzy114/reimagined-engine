@@ -48,6 +48,7 @@ export class Game {
   private damageFlash!: Graphics;
   private damageFlashTimer = 0;
   private endZoomTimer = 0;
+  private readonly endZoomDuration = 0.56;
   private endZoomScale = 1;
 
   private lives = MAX_LIVES;
@@ -138,7 +139,7 @@ export class Game {
     this.hud.setFooterVisible(shouldShowHudFooter(newState));
 
     if (newState === GameState.WIN || newState === GameState.LOSE || newState === GameState.CTA) {
-      this.endZoomTimer = 0.42;
+      this.endZoomTimer = this.endZoomDuration;
     } else {
       this.endZoomTimer = 0;
       this.endZoomScale = 1;
@@ -265,12 +266,12 @@ export class Game {
   private updateEndZoom(dt: number) {
     if (this.endZoomTimer <= 0) return;
     this.endZoomTimer = Math.max(0, this.endZoomTimer - dt);
-    const progress = 1 - this.endZoomTimer / 0.42;
+    const progress = 1 - this.endZoomTimer / this.endZoomDuration;
     const eased = 1 - Math.pow(1 - progress, 3);
-    this.endZoomScale = 1 + eased * 0.06;
+    this.endZoomScale = 1 + eased * 0.1;
     this.gameContainer.scale.set(this.endZoomScale);
     this.gameContainer.x = (GAME_WIDTH * (1 - this.endZoomScale)) / 2;
-    this.gameContainer.y = (GAME_HEIGHT * (1 - this.endZoomScale)) / 2 + eased * 10;
+    this.gameContainer.y = (GAME_HEIGHT * (1 - this.endZoomScale)) / 2 + eased * 18;
   }
 
   private checkCollisions() {
@@ -294,9 +295,10 @@ export class Game {
         this.hud.updateMoney(this.money);
         this.sounds.playCollect();
         this.hud.spawnRewardFly(
-          this.resolveRewardFlyTexture(),
+          this.resolveRewardFlyTexture(collectible.kind === "jackpot_paypal"),
           collectibleBounds.x + collectibleBounds.width / 2,
           collectibleBounds.y + collectibleBounds.height / 2,
+          collectible.kind === "jackpot_paypal" ? "paypal" : "cash",
           () => this.hud.triggerCounterPop()
         );
 
@@ -430,6 +432,7 @@ export class Game {
       footerVisible: this.hud.isFooterVisible(),
       hud: this.hud.getDebugMeta(),
       jackpot: this.level.getJackpotDebug(),
+      collectibles: this.level.getCollectibleDebug(),
       nextWarning: this.level.getNextWarningDebug(),
       endZoomScale: this.endZoomScale,
       overlayVariant: screenMeta?.overlayVariant ?? null,
@@ -437,6 +440,7 @@ export class Game {
       primaryCtaLabel: screenMeta?.primaryCtaLabel ?? null,
       screenIntroActive: screenMeta?.introActive ?? false,
       screenContentScale: screenMeta?.contentScale ?? 1,
+      screenAccentGlowStrength: screenMeta?.accentGlowStrength ?? 0,
     };
   }
 
@@ -458,7 +462,9 @@ export class Game {
   }
 
   debugSpawnRewardFly() {
-    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(), 220, 540, () => this.hud.triggerCounterPop());
+    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(false), 220, 540, "cash", () =>
+      this.hud.triggerCounterPop()
+    );
   }
 
   debugTriggerNearMiss() {
@@ -496,14 +502,24 @@ export class Game {
     this.hud.updateMoney(this.money);
     this.praisePopup.show("Close call!", x, y);
     this.sounds.playCollect();
-    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(), x, y, () => this.hud.triggerCounterPop());
+    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(false), x, y, "cash", () =>
+      this.hud.triggerCounterPop()
+    );
   }
 
-  private resolveRewardFlyTexture() {
+  private resolveRewardFlyTexture(usePaypal: boolean) {
+    if (usePaypal) {
+      return (
+        (Assets.get("paypalCard") as Texture) ||
+        (Assets.get("dollar") as Texture) ||
+        (Assets.get("coin") as Texture)
+      );
+    }
+
     return (
-      (Assets.get("paypalCard") as Texture) ||
       (Assets.get("dollar") as Texture) ||
-      (Assets.get("coin") as Texture)
+      (Assets.get("coin") as Texture) ||
+      (Assets.get("paypalCard") as Texture)
     );
   }
 }

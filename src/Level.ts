@@ -110,29 +110,39 @@ export class Level {
     let mainSprite: Sprite | AnimatedSprite;
     let glow: Sprite | undefined;
     let y: number;
+    let kind: string | undefined;
 
     switch (item.type) {
       case EntityType.COLLECTIBLE: {
         const isJackpotPickup = item.flags?.includes(EntityFlag.JACKPOT) ?? false;
-        const isPaypalBanner = isJackpotPickup || this.shouldUsePaypalBanner(item);
-        const primaryTex = isPaypalBanner ? Assets.get("paypalCounter") as Texture : Assets.get("dollar") as Texture;
-        const fallbackTex = isPaypalBanner ? Assets.get("paypalCard") as Texture : Assets.get("coin") as Texture;
+        const useDollar = Math.round(item.distance * 10) % 4 < 2;
+        const primaryTex = isJackpotPickup
+          ? (Assets.get("paypalCard") as Texture)
+          : useDollar
+            ? (Assets.get("dollar") as Texture)
+            : (Assets.get("coin") as Texture);
+        const fallbackTex = isJackpotPickup
+          ? (Assets.get("dollar") as Texture)
+          : useDollar
+            ? (Assets.get("coin") as Texture)
+            : (Assets.get("dollar") as Texture);
         const tex = primaryTex || fallbackTex;
         if (!tex) return;
         mainSprite = new Sprite(tex);
         mainSprite.anchor.set(0.5, 0.5);
-        mainSprite.scale.set(isJackpotPickup ? 0.24 : isPaypalBanner ? 0.2 : 0.15);
+        mainSprite.scale.set(isJackpotPickup ? 0.26 : useDollar ? 0.16 : 0.17);
 
         glow = new Sprite(Texture.WHITE);
         glow.anchor.set(0.5);
-        glow.width = isJackpotPickup ? 116 : isPaypalBanner ? 92 : 58;
-        glow.height = isJackpotPickup ? 56 : isPaypalBanner ? 42 : 24;
+        glow.width = isJackpotPickup ? 116 : useDollar ? 66 : 58;
+        glow.height = isJackpotPickup ? 56 : useDollar ? 28 : 24;
         glow.alpha = isJackpotPickup ? 0.2 : 0.12;
         glow.tint = 0xffd86b;
         container.addChild(glow);
         
         container.addChild(mainSprite);
-        y = this.groundY - yOffset - (isJackpotPickup ? 66 : isPaypalBanner ? 56 : 40);
+        y = this.groundY - yOffset - (isJackpotPickup ? 90 : useDollar ? 62 : 58);
+        kind = isJackpotPickup ? "jackpot_paypal" : useDollar ? "cash_dollar" : "cash_coin";
         break;
       }
       case EntityType.ENEMY: {
@@ -151,6 +161,7 @@ export class Level {
         mainSprite = cones;
         container.addChild(cones);
         y = this.groundY - 6;
+        kind = "cone";
         break;
       }
       default:
@@ -191,7 +202,7 @@ export class Level {
       nearMissAwarded: false,
       flags: item.flags ? [...item.flags] : undefined,
       warningLabel,
-      kind: item.flags?.includes(EntityFlag.JACKPOT) ? "jackpot_paypal" : item.type === EntityType.OBSTACLE ? "cone" : undefined,
+      kind,
 
       collect() {
         this.collected = true;
@@ -343,10 +354,14 @@ export class Level {
     };
   }
 
-  private shouldUsePaypalBanner(item: LevelItem) {
-    if (item.type !== EntityType.COLLECTIBLE) return false;
-    if (item.yOffset === undefined) return false;
-    return Math.round(item.distance * 10) % 6 === 0;
+  getCollectibleDebug() {
+    return this.entities
+      .filter((entity) => entity.active && entity.type === EntityType.COLLECTIBLE)
+      .map((entity) => ({
+        kind: entity.kind ?? "unknown",
+        x: entity.x,
+        y: entity.y,
+      }));
   }
 
   private createConeCluster() {

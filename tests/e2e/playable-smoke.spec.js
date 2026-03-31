@@ -78,6 +78,10 @@ test("collecting money can spawn a fly-to-counter animation", async ({ page }) =
   await expect
     .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().hud.flyCount))
     .toBeGreaterThan(0);
+
+  const hud = await page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().hud);
+  expect(hud.lastFlyVariant).toBe("cash");
+  expect(hud.lastFlyControlY).toBeLessThan(220);
 });
 
 test("reward arrival triggers a counter pop on the paypal hud", async ({ page }) => {
@@ -111,6 +115,11 @@ test("jackpot moment is scripted near the finish", async ({ page }) => {
       activeCount: 4,
       upcomingCount: 0,
     });
+
+  const activeKinds = await page.evaluate(() =>
+    window.__PLAYABLE_TEST_API__?.snapshot().collectibles.map((item) => item.kind)
+  );
+  expect(activeKinds).not.toContain("paypal_counter");
 });
 
 test("near-miss bonus adds money and surfaces feedback", async ({ page }) => {
@@ -147,7 +156,11 @@ test("win state applies an end zoom instead of a hard cut", async ({ page }) => 
 
   await expect
     .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().endZoomScale))
-    .toBeGreaterThan(1.02);
+    .toBeGreaterThan(1.06);
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().screenAccentGlowStrength))
+    .toBeGreaterThan(0.15);
 });
 
 test("cta screen runs an intro motion before settling", async ({ page }) => {
@@ -165,6 +178,10 @@ test("cta screen runs an intro motion before settling", async ({ page }) => {
       state: "cta",
       screenIntroActive: true,
     });
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().screenAccentGlowStrength))
+    .toBeGreaterThan(0.15);
 });
 
 test("win state uses the payoff overlay style without the sky burst", async ({ page }) => {

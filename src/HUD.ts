@@ -7,6 +7,7 @@ interface FlyReward {
   control: Point;
   target: Point;
   progress: number;
+  variant: "cash" | "paypal";
   onComplete?: () => void;
 }
 
@@ -26,6 +27,8 @@ export class HUD {
   private rewardFlies: FlyReward[] = [];
   private counterPopTimer = 0;
   private counterPopDuration = 0.36;
+  private lastFlyVariant: "cash" | "paypal" | null = null;
+  private lastFlyControlY: number | null = null;
 
   constructor(onToggleMute: () => void, isMuted: () => boolean) {
     this.container = new Container();
@@ -224,19 +227,27 @@ export class HUD {
     }
   }
 
-  spawnRewardFly(texture: Texture, startX: number, startY: number, onComplete?: () => void) {
+  spawnRewardFly(
+    texture: Texture,
+    startX: number,
+    startY: number,
+    variant: "cash" | "paypal",
+    onComplete?: () => void
+  ) {
     const sprite = new Sprite(texture);
     sprite.anchor.set(0.5);
     sprite.x = startX;
     sprite.y = startY;
-    sprite.scale.set(0.18);
+    sprite.scale.set(variant === "paypal" ? 0.2 : 0.18);
 
     const target = this.getCounterTarget();
     const control = new Point(
-      startX + (target.x - startX) * 0.55,
-      Math.min(startY, target.y) - 120
+      startX + (target.x - startX) * 0.48,
+      Math.min(startY, target.y) - (variant === "paypal" ? 210 : 190)
     );
 
+    this.lastFlyVariant = variant;
+    this.lastFlyControlY = control.y;
     this.rewardFlyLayer.addChild(sprite);
     this.rewardFlies.push({
       sprite,
@@ -244,6 +255,7 @@ export class HUD {
       control,
       target,
       progress: 0,
+      variant,
       onComplete,
     });
   }
@@ -279,6 +291,8 @@ export class HUD {
       flyCount: this.rewardFlies.length,
       counterPopActive: this.counterPopTimer > 0,
       counterPopScale: this.counterShell.scale.x,
+      lastFlyVariant: this.lastFlyVariant,
+      lastFlyControlY: this.lastFlyControlY,
     };
   }
 }

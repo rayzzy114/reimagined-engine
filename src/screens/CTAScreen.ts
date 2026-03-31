@@ -4,10 +4,12 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
 export class CTAScreen {
   container: Container;
   private content: Container;
+  private heroGlow: Graphics;
   private buttonContainer: Container;
   private buttonText: Text;
   private pulseTimer = 0;
   private introTimer = 0;
+  private glowStrength = 0;
 
   constructor() {
     this.container = new Container();
@@ -25,6 +27,9 @@ export class CTAScreen {
 
     this.content = new Container();
     this.container.addChild(this.content);
+
+    this.heroGlow = new Graphics();
+    this.content.addChild(this.heroGlow);
 
     const title = new Text({
       text: "Play in the app",
@@ -97,23 +102,30 @@ export class CTAScreen {
   update(dt: number) {
     if (!this.container.visible) return;
     this.introTimer += dt;
-    const introT = Math.min(this.introTimer / 0.42, 1);
+    const introT = Math.min(this.introTimer / 0.48, 1);
     const eased = 1 - Math.pow(1 - introT, 3);
     this.content.alpha = eased;
-    this.content.scale.set(0.92 + eased * 0.08);
-    this.content.x = GAME_WIDTH * 0.04 * (1 - eased);
-    this.content.y = GAME_HEIGHT * 0.028 * (1 - eased);
+    this.content.scale.set(0.9 + eased * 0.12);
+    this.content.x = GAME_WIDTH * 0.048 * (1 - eased);
+    this.content.y = GAME_HEIGHT * 0.032 * (1 - eased);
 
     this.pulseTimer += dt;
-    const scale = 1 + Math.sin(this.pulseTimer * 4) * 0.04;
+    const pulse = Math.sin(this.pulseTimer * 5.2) * 0.5 + 0.5;
+    const scale = 1 + Math.sin(this.pulseTimer * 4.4) * 0.055;
     this.buttonContainer.scale.set(scale);
+    this.content.y -= pulse * 4;
+    this.glowStrength = 0.16 + pulse * 0.12;
+    this.heroGlow.clear();
+    this.heroGlow.ellipse(GAME_WIDTH / 2, GAME_HEIGHT * 0.58, 172 + pulse * 20, 124 + pulse * 12);
+    this.heroGlow.fill({ color: 0xffb14a, alpha: this.glowStrength });
   }
 
   show() {
     this.introTimer = 0;
     this.pulseTimer = 0;
+    this.glowStrength = 0;
     this.content.alpha = 0;
-    this.content.scale.set(0.92);
+    this.content.scale.set(0.9);
     this.content.x = GAME_WIDTH * 0.04;
     this.content.y = GAME_HEIGHT * 0.028;
   }
@@ -158,8 +170,9 @@ export class CTAScreen {
       overlayVariant: "install",
       hasSkyBurstOverlay: false,
       primaryCtaLabel: this.buttonText.text,
-      introActive: this.introTimer < 0.42,
+      introActive: this.introTimer < 0.48,
       contentScale: this.content.scale.x,
+      accentGlowStrength: this.glowStrength,
     };
   }
 }

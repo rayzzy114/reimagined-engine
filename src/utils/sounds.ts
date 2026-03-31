@@ -194,26 +194,27 @@ export class SoundManager {
 
   private createMusicLoop(context: AudioContext) {
     const sampleRate = context.sampleRate;
-    const durationSeconds = 8;
+    const durationSeconds = 6;
     const frameCount = sampleRate * durationSeconds;
     const buffer = context.createBuffer(1, frameCount, sampleRate);
     const channel = buffer.getChannelData(0);
 
-    const notes = [196, 246.94, 293.66, 329.63, 293.66, 246.94, 220, 261.63];
-    const noteDuration = sampleRate * 0.75;
+    const notes = [261.63, 329.63, 392, 440, 392, 523.25, 440, 392];
+    const noteDuration = sampleRate * 0.5;
 
     for (let i = 0; i < frameCount; i++) {
       const noteIndex = Math.floor(i / noteDuration) % notes.length;
       const noteTime = (i % noteDuration) / sampleRate;
       const envelope =
-        Math.min(1, noteTime * 7) *
-        Math.max(0, 1 - Math.max(0, noteTime - 0.42) * 2.6);
+        Math.min(1, noteTime * 12) *
+        Math.max(0, 1 - Math.max(0, noteTime - 0.28) * 4.2);
       const freq = notes[noteIndex];
 
       const base = Math.sin((2 * Math.PI * freq * i) / sampleRate);
-      const octave = Math.sin((2 * Math.PI * freq * 0.5 * i) / sampleRate) * 0.32;
-      const shimmer = Math.sin((2 * Math.PI * freq * 2 * i) / sampleRate) * 0.14;
-      channel[i] = (base * 0.62 + octave + shimmer) * envelope * 0.1;
+      const harmony = Math.sin((2 * Math.PI * freq * 1.5 * i) / sampleRate) * 0.22;
+      const sparkle = Math.sin((2 * Math.PI * freq * 2 * i) / sampleRate) * 0.16;
+      const bounce = Math.sin((2 * Math.PI * freq * 0.5 * i) / sampleRate) * 0.12;
+      channel[i] = (base * 0.66 + harmony + sparkle + bounce) * envelope * 0.1;
     }
 
     return buffer;
