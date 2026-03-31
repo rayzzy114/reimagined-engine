@@ -51,7 +51,10 @@ export class Game {
   private damageFlashTimer = 0;
   private endZoomTimer = 0;
   private readonly endZoomDuration = 0.56;
+  private readonly finishBreakLeadTime = 0.2;
   private endZoomScale = 1;
+  private isFinishBreakPending = false;
+  private finishBreakTimer = 0;
 
   private lives = MAX_LIVES;
   private money = 0;
@@ -142,6 +145,8 @@ export class Game {
 
   private setState(newState: GameState) {
     this.state = newState;
+    this.isFinishBreakPending = false;
+    this.finishBreakTimer = 0;
 
     this.startScreen.container.visible = newState === GameState.START;
     this.tutorialOverlay.container.visible = newState === GameState.TUTORIAL_PAUSE;
@@ -236,6 +241,14 @@ export class Game {
     this.player.update(dt);
     this.level.update(dt);
     this.updateFinishLine();
+
+    if (this.isFinishBreakPending) {
+      this.finishBreakTimer = Math.max(0, this.finishBreakTimer - dt);
+      if (this.finishBreakTimer === 0) {
+        this.setState(GameState.WIN);
+      }
+      return;
+    }
 
     if (this.damageFlashTimer > 0) {
       this.damageFlashTimer -= dt;
@@ -342,8 +355,12 @@ export class Game {
 
     // Finish
     if (this.level.isFinishReached()) {
-      this.finishRibbon.breakRibbon(playerBounds.y + playerBounds.height / 2);
-      this.setState(GameState.WIN);
+      if (!this.isFinishBreakPending) {
+        this.finishRibbon.breakRibbon(playerBounds.y + playerBounds.height * 0.38);
+        this.isFinishBreakPending = true;
+        this.finishBreakTimer = this.finishBreakLeadTime;
+      }
+      return;
     }
   }
 
@@ -430,6 +447,7 @@ export class Game {
       background: this.background.getDebugMeta(),
       player: this.player.getDebugMeta(),
       finish: this.finishRibbon.getDebugMeta(),
+      finishBreakPending: this.isFinishBreakPending,
       particles: this.particles.getDebugMeta(),
       nearMissCount: this.nearMissCount,
       lastNearMissLabel: this.lastNearMissLabel,

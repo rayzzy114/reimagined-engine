@@ -20,16 +20,16 @@ export class FinishRibbon {
   private breakTimer = 0;
   private ribbonX = GAME_WIDTH + 200;
   private readonly groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
-  private readonly torsoOffset = 154;
+  private readonly torsoOffset = 162;
   private readonly bannerY = this.groundY - this.torsoOffset;
-  private readonly bannerWidth = 220;
+  private readonly bannerWidth = 244;
   private readonly bannerHeight = 12;
-  private readonly ribbonAngle = -0.14;
-  private readonly postOffsetX = 132;
-  private readonly postTopY = this.bannerY - 108;
+  private readonly ribbonAngle = -0.11;
+  private readonly postOffsetX = 128;
+  private readonly postTopY = this.bannerY - 96;
   private readonly breakDuration = 0.42;
-  private leftBrokenState: BrokenTapeState = { vx: -210, vy: -120, rotationSpeed: -2.2 };
-  private rightBrokenState: BrokenTapeState = { vx: 195, vy: -108, rotationSpeed: 2.05 };
+  private leftBrokenState: BrokenTapeState = { vx: -240, vy: -126, rotationSpeed: -2.5 };
+  private rightBrokenState: BrokenTapeState = { vx: 225, vy: -116, rotationSpeed: 2.3 };
 
   constructor() {
     this.backContainer = new Container();
@@ -78,7 +78,7 @@ export class FinishRibbon {
     const segment = new Container();
     const body = new Graphics();
     const rope = new Graphics();
-    const left = mode === "right" ? 0 : -width;
+    const left = mode === "full" ? -width / 2 : mode === "right" ? 0 : -width;
     const checkerWidth = 12;
     const ropeTopY = -this.bannerHeight / 2 - 2;
     const ropeBottomY = this.bannerHeight / 2 + 2;
@@ -140,14 +140,16 @@ export class FinishRibbon {
     this.broken = true;
     this.breakTimer = this.breakDuration;
     this.intactRibbon.visible = false;
+    this.leftBrokenState = { vx: -240, vy: -126, rotationSpeed: -2.5 };
+    this.rightBrokenState = { vx: 225, vy: -116, rotationSpeed: 2.3 };
 
-    const brokenY = Math.max(this.bannerY - 8, Math.min(this.bannerY + 8, playerY));
+    const brokenY = Math.max(this.bannerY - 18, Math.min(this.bannerY + 18, playerY - 8));
     this.leftBrokenRibbon.visible = true;
     this.rightBrokenRibbon.visible = true;
-    this.leftBrokenRibbon.position.set(-6, brokenY);
-    this.rightBrokenRibbon.position.set(6, brokenY);
-    this.leftBrokenRibbon.rotation = this.ribbonAngle - 0.04;
-    this.rightBrokenRibbon.rotation = this.ribbonAngle + 0.07;
+    this.leftBrokenRibbon.position.set(-14, brokenY);
+    this.rightBrokenRibbon.position.set(14, brokenY);
+    this.leftBrokenRibbon.rotation = this.ribbonAngle - 0.06;
+    this.rightBrokenRibbon.rotation = this.ribbonAngle + 0.08;
     this.leftBrokenRibbon.alpha = 1;
     this.rightBrokenRibbon.alpha = 1;
   }
