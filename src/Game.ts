@@ -77,6 +77,9 @@ export class Game {
     this.background = new Background();
     this.gameContainer.addChild(this.background.container);
 
+    this.finishRibbon = new FinishRibbon();
+    this.gameContainer.addChild(this.finishRibbon.backContainer);
+
     this.player = new Player();
     this.gameContainer.addChild(this.player.container);
 
@@ -85,8 +88,7 @@ export class Game {
     this.particles = new ParticleSystem();
     this.gameContainer.addChild(this.particles.container);
 
-    this.finishRibbon = new FinishRibbon();
-    this.gameContainer.addChild(this.finishRibbon.container);
+    this.gameContainer.addChild(this.finishRibbon.frontContainer);
 
     this.damageFlash = new Graphics();
     this.damageFlash.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);

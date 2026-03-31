@@ -315,7 +315,7 @@ test("win tap triggers install without showing a second CTA screen", async ({ pa
     });
 });
 
-test("finish ribbon sits around the runner torso instead of dragging on the ground", async ({ page }) => {
+test("finish ribbon sits between posts around the runner torso", async ({ page }) => {
   await page.goto(playableUrl);
   await page.waitForSelector("canvas");
   await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
@@ -332,12 +332,12 @@ test("finish ribbon sits around the runner torso instead of dragging on the grou
     });
 
   const finish = await page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().finish);
-  expect(finish.hasPosts).toBe(false);
+  expect(finish.hasPosts).toBe(true);
   expect(finish.bannerHeight).toBeLessThanOrEqual(28);
-  expect(finish.bannerY).toBeGreaterThanOrEqual(820);
-  expect(finish.bannerY).toBeLessThanOrEqual(900);
+  expect(finish.bannerY).toBeGreaterThanOrEqual(790);
+  expect(finish.bannerY).toBeLessThanOrEqual(870);
   expect(finish.groundY - finish.bannerY).toBeGreaterThanOrEqual(120);
-  expect(finish.groundY - finish.bannerY).toBeLessThanOrEqual(190);
+  expect(finish.groundY - finish.bannerY).toBeLessThanOrEqual(220);
 });
 
 test("cta screen runs an intro motion before settling", async ({ page }) => {

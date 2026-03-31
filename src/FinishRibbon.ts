@@ -8,26 +8,37 @@ interface BrokenTapeState {
 }
 
 export class FinishRibbon {
-  container: Container;
+  backContainer: Container;
+  frontContainer: Container;
+  private leftPost: Graphics;
+  private rightPost: Graphics;
   private intactRibbon: Container;
   private leftBrokenRibbon: Container;
   private rightBrokenRibbon: Container;
   private active = false;
   private broken = false;
+  private breakTimer = 0;
   private ribbonX = GAME_WIDTH + 200;
-  private groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
-  private readonly torsoOffset = 164;
+  private readonly groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
+  private readonly torsoOffset = 176;
   private readonly bannerY = this.groundY - this.torsoOffset;
-  private readonly bannerWidth = 248;
-  private readonly bannerHeight = 14;
-  private readonly ribbonAngle = -0.17;
-  private leftBrokenState: BrokenTapeState = { vx: -180, vy: -140, rotationSpeed: -2.4 };
-  private rightBrokenState: BrokenTapeState = { vx: 180, vy: -120, rotationSpeed: 2.1 };
+  private readonly bannerWidth = 220;
+  private readonly bannerHeight = 12;
+  private readonly ribbonAngle = -0.14;
+  private readonly postOffsetX = 126;
+  private readonly postTopY = this.bannerY - 84;
+  private readonly breakDuration = 0.42;
+  private leftBrokenState: BrokenTapeState = { vx: -210, vy: -120, rotationSpeed: -2.2 };
+  private rightBrokenState: BrokenTapeState = { vx: 195, vy: -108, rotationSpeed: 2.05 };
 
   constructor() {
-    this.container = new Container();
-    this.container.visible = false;
+    this.backContainer = new Container();
+    this.frontContainer = new Container();
+    this.backContainer.visible = false;
+    this.frontContainer.visible = false;
 
+    this.leftPost = this.createPost();
+    this.rightPost = this.createPost();
     this.intactRibbon = this.createRibbon("full");
     this.leftBrokenRibbon = this.createRibbon("left");
     this.rightBrokenRibbon = this.createRibbon("right");
@@ -35,12 +46,28 @@ export class FinishRibbon {
     this.leftBrokenRibbon.visible = false;
     this.rightBrokenRibbon.visible = false;
 
-    this.container.addChild(this.intactRibbon);
-    this.container.addChild(this.leftBrokenRibbon);
-    this.container.addChild(this.rightBrokenRibbon);
+    this.backContainer.addChild(this.leftPost);
+    this.backContainer.addChild(this.rightPost);
+    this.frontContainer.addChild(this.intactRibbon);
+    this.frontContainer.addChild(this.leftBrokenRibbon);
+    this.frontContainer.addChild(this.rightBrokenRibbon);
 
-    this.layoutRibbon();
+    this.layout();
     this.setPosition(this.ribbonX);
+  }
+
+  private createPost() {
+    const post = new Graphics();
+    const postHeight = this.groundY - this.postTopY + 14;
+
+    post.roundRect(-5, 0, 10, postHeight, 4);
+    post.fill({ color: 0xa98f98 });
+    post.stroke({ color: 0x7e6872, width: 1.5, alpha: 0.8 });
+
+    post.roundRect(-7, postHeight - 18, 14, 18, 5);
+    post.fill({ color: 0x8f7781, alpha: 0.9 });
+
+    return post;
   }
 
   private createRibbon(mode: "full" | "left" | "right") {
@@ -48,7 +75,6 @@ export class FinishRibbon {
     const segment = new Container();
     const body = new Graphics();
     const rope = new Graphics();
-
     const left = mode === "right" ? 0 : -width;
     const checkerWidth = 12;
     const ropeTopY = -this.bannerHeight / 2 - 2;
@@ -57,35 +83,25 @@ export class FinishRibbon {
     for (let index = 0; index < Math.ceil(width / checkerWidth); index++) {
       const cellX = left + index * checkerWidth;
       body.rect(cellX, -this.bannerHeight / 2, checkerWidth, this.bannerHeight);
-      body.fill({ color: index % 2 === 0 ? 0x151515 : 0xf8f5ee });
+      body.fill({ color: index % 2 === 0 ? 0x141414 : 0xf7f4ec });
     }
 
-    body.roundRect(left, -this.bannerHeight / 2, width, this.bannerHeight, 6);
-    body.stroke({ color: 0xd7c2ab, width: 1.4, alpha: 0.92 });
+    body.roundRect(left, -this.bannerHeight / 2, width, this.bannerHeight, 4);
+    body.stroke({ color: 0xdbc9b4, width: 1.2, alpha: 0.9 });
 
     rope.moveTo(left, ropeTopY);
     rope.lineTo(left + width, ropeTopY);
-    rope.stroke({ color: 0xcba17a, width: 2.2 });
+    rope.stroke({ color: 0xcba17a, width: 1.9 });
     rope.moveTo(left, ropeBottomY);
     rope.lineTo(left + width, ropeBottomY);
-    rope.stroke({ color: 0xcba17a, width: 2.2 });
+    rope.stroke({ color: 0xcba17a, width: 1.9 });
 
     for (let x = 0; x <= width; x += 10) {
       const worldX = left + x;
-      rope.circle(worldX, ropeTopY, 1.8);
-      rope.fill({ color: 0xe2bb95, alpha: 0.95 });
-      rope.circle(worldX, ropeBottomY, 1.8);
-      rope.fill({ color: 0xe2bb95, alpha: 0.95 });
-
-      if (x < width) {
-        const nextX = Math.min(left + width, worldX + 6);
-        rope.moveTo(worldX, ropeTopY - 1.2);
-        rope.lineTo(nextX, ropeTopY + 1.2);
-        rope.stroke({ color: 0xf3d7bc, width: 0.9, alpha: 0.7 });
-        rope.moveTo(worldX, ropeBottomY - 1.2);
-        rope.lineTo(nextX, ropeBottomY + 1.2);
-        rope.stroke({ color: 0xf3d7bc, width: 0.9, alpha: 0.7 });
-      }
+      rope.circle(worldX, ropeTopY, 1.5);
+      rope.fill({ color: 0xe7c4a2, alpha: 0.95 });
+      rope.circle(worldX, ropeBottomY, 1.5);
+      rope.fill({ color: 0xe7c4a2, alpha: 0.95 });
     }
 
     segment.addChild(body);
@@ -93,19 +109,25 @@ export class FinishRibbon {
     return segment;
   }
 
-  private layoutRibbon() {
+  private layout() {
+    const postBaseY = this.postTopY;
+
+    this.leftPost.position.set(-this.postOffsetX, postBaseY);
+    this.rightPost.position.set(this.postOffsetX, postBaseY);
     this.intactRibbon.position.set(0, this.bannerY);
     this.intactRibbon.rotation = this.ribbonAngle;
   }
 
   show() {
     this.active = true;
-    this.container.visible = true;
+    this.backContainer.visible = true;
+    this.frontContainer.visible = true;
   }
 
   setPosition(x: number) {
     this.ribbonX = x;
-    this.container.x = x;
+    this.backContainer.x = x;
+    this.frontContainer.x = x;
   }
 
   breakRibbon(playerY: number) {
@@ -113,39 +135,53 @@ export class FinishRibbon {
 
     this.show();
     this.broken = true;
+    this.breakTimer = this.breakDuration;
     this.intactRibbon.visible = false;
 
-    const brokenY = Math.max(this.bannerY - 10, Math.min(this.bannerY + 10, playerY));
+    const brokenY = Math.max(this.bannerY - 10, Math.min(this.bannerY + 8, playerY - 6));
     this.leftBrokenRibbon.visible = true;
     this.rightBrokenRibbon.visible = true;
-    this.leftBrokenRibbon.position.set(-8, brokenY);
-    this.rightBrokenRibbon.position.set(8, brokenY);
-    this.leftBrokenRibbon.rotation = this.ribbonAngle - 0.05;
-    this.rightBrokenRibbon.rotation = this.ribbonAngle + 0.08;
+    this.leftBrokenRibbon.position.set(-6, brokenY);
+    this.rightBrokenRibbon.position.set(6, brokenY);
+    this.leftBrokenRibbon.rotation = this.ribbonAngle - 0.04;
+    this.rightBrokenRibbon.rotation = this.ribbonAngle + 0.07;
+    this.leftBrokenRibbon.alpha = 1;
+    this.rightBrokenRibbon.alpha = 1;
   }
 
   update(dt: number) {
     if (!this.active || !this.broken) return;
 
+    this.breakTimer = Math.max(0, this.breakTimer - dt);
+    const fade = this.breakTimer / this.breakDuration;
+
     this.leftBrokenRibbon.x += this.leftBrokenState.vx * dt;
     this.leftBrokenRibbon.y += this.leftBrokenState.vy * dt;
     this.leftBrokenRibbon.rotation += this.leftBrokenState.rotationSpeed * dt;
-    this.leftBrokenState.vy += 520 * dt;
+    this.leftBrokenState.vy += 460 * dt;
+    this.leftBrokenRibbon.alpha = fade;
 
     this.rightBrokenRibbon.x += this.rightBrokenState.vx * dt;
     this.rightBrokenRibbon.y += this.rightBrokenState.vy * dt;
     this.rightBrokenRibbon.rotation += this.rightBrokenState.rotationSpeed * dt;
-    this.rightBrokenState.vy += 520 * dt;
+    this.rightBrokenState.vy += 460 * dt;
+    this.rightBrokenRibbon.alpha = fade;
+
+    if (this.breakTimer === 0) {
+      this.leftBrokenRibbon.visible = false;
+      this.rightBrokenRibbon.visible = false;
+      this.frontContainer.visible = false;
+    }
   }
 
   getDebugMeta() {
     return {
-      visible: this.container.visible,
-      hasPosts: false,
+      visible: this.backContainer.visible || this.frontContainer.visible,
+      hasPosts: true,
       bannerHeight: this.bannerHeight,
       bannerY: this.bannerY,
       groundY: this.groundY,
-      x: this.container.x,
+      x: this.frontContainer.x,
       broken: this.broken,
     };
   }
