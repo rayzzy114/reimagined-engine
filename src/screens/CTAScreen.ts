@@ -3,9 +3,11 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
 
 export class CTAScreen {
   container: Container;
+  private content: Container;
   private buttonContainer: Container;
   private buttonText: Text;
   private pulseTimer = 0;
+  private introTimer = 0;
 
   constructor() {
     this.container = new Container();
@@ -21,6 +23,9 @@ export class CTAScreen {
     topCapsule.fill({ color: 0x101010, alpha: 0.95 });
     this.container.addChild(topCapsule);
 
+    this.content = new Container();
+    this.container.addChild(this.content);
+
     const title = new Text({
       text: "Play in the app",
       style: new TextStyle({
@@ -34,7 +39,7 @@ export class CTAScreen {
     title.anchor.set(0.5);
     title.x = GAME_WIDTH / 2;
     title.y = GAME_HEIGHT * 0.26;
-    this.container.addChild(title);
+    this.content.addChild(title);
 
     const subtitle = new Text({
       text: "Cash out with PayPal",
@@ -49,7 +54,7 @@ export class CTAScreen {
     subtitle.anchor.set(0.5);
     subtitle.x = GAME_WIDTH / 2;
     subtitle.y = GAME_HEIGHT * 0.315;
-    this.container.addChild(subtitle);
+    this.content.addChild(subtitle);
 
     const paypalCardTex = (Assets.get("paypalCounter") as Texture) || (Assets.get("paypalCard") as Texture);
     if (paypalCardTex) {
@@ -58,7 +63,7 @@ export class CTAScreen {
       card.x = GAME_WIDTH / 2;
       card.y = GAME_HEIGHT * 0.52;
       card.scale.set(0.46);
-      this.container.addChild(card);
+      this.content.addChild(card);
     }
 
     this.buttonContainer = new Container();
@@ -86,14 +91,31 @@ export class CTAScreen {
     this.buttonText.anchor.set(0.5);
     this.buttonContainer.addChild(this.buttonText);
     this.buttonContainer.on("pointertap", () => this.triggerCTA());
-    this.container.addChild(this.buttonContainer);
+    this.content.addChild(this.buttonContainer);
   }
 
   update(dt: number) {
     if (!this.container.visible) return;
+    this.introTimer += dt;
+    const introT = Math.min(this.introTimer / 0.42, 1);
+    const eased = 1 - Math.pow(1 - introT, 3);
+    this.content.alpha = eased;
+    this.content.scale.set(0.92 + eased * 0.08);
+    this.content.x = GAME_WIDTH * 0.04 * (1 - eased);
+    this.content.y = GAME_HEIGHT * 0.028 * (1 - eased);
+
     this.pulseTimer += dt;
-    const scale = 1 + Math.sin(this.pulseTimer * 4) * 0.03;
+    const scale = 1 + Math.sin(this.pulseTimer * 4) * 0.04;
     this.buttonContainer.scale.set(scale);
+  }
+
+  show() {
+    this.introTimer = 0;
+    this.pulseTimer = 0;
+    this.content.alpha = 0;
+    this.content.scale.set(0.92);
+    this.content.x = GAME_WIDTH * 0.04;
+    this.content.y = GAME_HEIGHT * 0.028;
   }
 
   triggerCTA() {
@@ -136,6 +158,8 @@ export class CTAScreen {
       overlayVariant: "install",
       hasSkyBurstOverlay: false,
       primaryCtaLabel: this.buttonText.text,
+      introActive: this.introTimer < 0.42,
+      contentScale: this.content.scale.x,
     };
   }
 }

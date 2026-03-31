@@ -47,6 +47,8 @@ export class Game {
   private sounds = new SoundManager();
   private damageFlash!: Graphics;
   private damageFlashTimer = 0;
+  private endZoomTimer = 0;
+  private endZoomScale = 1;
 
   private lives = MAX_LIVES;
   private money = 0;
@@ -135,6 +137,16 @@ export class Game {
     this.ctaScreen.container.visible = newState === GameState.CTA;
     this.hud.setFooterVisible(shouldShowHudFooter(newState));
 
+    if (newState === GameState.WIN || newState === GameState.LOSE || newState === GameState.CTA) {
+      this.endZoomTimer = 0.42;
+    } else {
+      this.endZoomTimer = 0;
+      this.endZoomScale = 1;
+      this.gameContainer.scale.set(1);
+      this.gameContainer.x = 0;
+      this.gameContainer.y = 0;
+    }
+
     if (newState === GameState.PLAYING || newState === GameState.TUTORIAL_PAUSE) {
       this.sounds.playBackgroundMusic();
     } else {
@@ -148,6 +160,9 @@ export class Game {
     if (newState === GameState.LOSE) {
       this.sounds.playLose();
       this.loseScreen.play();
+    }
+    if (newState === GameState.CTA) {
+      this.ctaScreen.show();
     }
   }
 
@@ -185,8 +200,10 @@ export class Game {
 
   private update(dt: number) {
     this.praisePopup.update(dt);
+    this.winScreen.update(dt);
     this.ctaScreen.update(dt);
     this.hud.update(dt);
+    this.updateEndZoom(dt);
 
     if (this.state === GameState.START) {
       this.startScreen.update(dt);
@@ -243,6 +260,17 @@ export class Game {
 
     this.finishRibbon.show();
     this.finishRibbon.setPosition(remainingDistance * GAME_WIDTH);
+  }
+
+  private updateEndZoom(dt: number) {
+    if (this.endZoomTimer <= 0) return;
+    this.endZoomTimer = Math.max(0, this.endZoomTimer - dt);
+    const progress = 1 - this.endZoomTimer / 0.42;
+    const eased = 1 - Math.pow(1 - progress, 3);
+    this.endZoomScale = 1 + eased * 0.06;
+    this.gameContainer.scale.set(this.endZoomScale);
+    this.gameContainer.x = (GAME_WIDTH * (1 - this.endZoomScale)) / 2;
+    this.gameContainer.y = (GAME_HEIGHT * (1 - this.endZoomScale)) / 2 + eased * 10;
   }
 
   private checkCollisions() {
@@ -403,9 +431,12 @@ export class Game {
       hud: this.hud.getDebugMeta(),
       jackpot: this.level.getJackpotDebug(),
       nextWarning: this.level.getNextWarningDebug(),
+      endZoomScale: this.endZoomScale,
       overlayVariant: screenMeta?.overlayVariant ?? null,
       hasSkyBurstOverlay: screenMeta?.hasSkyBurstOverlay ?? false,
       primaryCtaLabel: screenMeta?.primaryCtaLabel ?? null,
+      screenIntroActive: screenMeta?.introActive ?? false,
+      screenContentScale: screenMeta?.contentScale ?? 1,
     };
   }
 

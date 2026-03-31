@@ -136,6 +136,37 @@ test("near-miss bonus adds money and surfaces feedback", async ({ page }) => {
     .toBe(true);
 });
 
+test("win state applies an end zoom instead of a hard cut", async ({ page }) => {
+  await page.goto(playableUrl);
+  await page.waitForSelector("canvas");
+  await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
+
+  await page.evaluate(() => {
+    window.__PLAYABLE_TEST_API__?.setState("win");
+  });
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().endZoomScale))
+    .toBeGreaterThan(1.02);
+});
+
+test("cta screen runs an intro motion before settling", async ({ page }) => {
+  await page.goto(playableUrl);
+  await page.waitForSelector("canvas");
+  await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
+
+  await page.evaluate(() => {
+    window.__PLAYABLE_TEST_API__?.setState("cta");
+  });
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot()))
+    .toMatchObject({
+      state: "cta",
+      screenIntroActive: true,
+    });
+});
+
 test("win state uses the payoff overlay style without the sky burst", async ({ page }) => {
   await page.goto(playableUrl);
   await page.waitForSelector("canvas");
