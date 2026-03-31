@@ -14,11 +14,6 @@ import bush2Url from "../../assets/bush2.png";
 import bush3Url from "../../assets/bush3.png";
 import dollarUrl from "../../assets/dollar.png";
 import coinUrl from "../../assets/coin_collectible.png";
-import finishLineUrl from "../../assets/finish_line.png";
-import finishPostUrl from "../../assets/finish_post.png";
-import finishTapeLeftUrl from "../../assets/finish_tape_left.png";
-import finishTapeRightUrl from "../../assets/finish_tape_right.png";
-import finishTapeTopUrl from "../../assets/finish_tape_top.png";
 import handUrl from "../../assets/hand.webp";
 import paypalCounterUrl from "../../assets/paypal_counter.webp";
 import failImageUrl from "../../assets/fail_image.png";
@@ -40,11 +35,6 @@ const assetMap: Record<string, string> = {
   bush3: bush3Url,
   dollar: dollarUrl,
   coin: coinUrl,
-  finishLine: finishLineUrl,
-  finishPost: finishPostUrl,
-  finishTapeLeft: finishTapeLeftUrl,
-  finishTapeRight: finishTapeRightUrl,
-  finishTapeTop: finishTapeTopUrl,
   hand: handUrl,
   paypalCounter: paypalCounterUrl,
   paypalCard: paypalCounterUrl,

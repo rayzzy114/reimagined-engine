@@ -6,11 +6,16 @@ export class WinScreen {
   private content: Container;
   private heroGlow: Graphics;
   private rewardAmountText: Text;
+  private buttonContainer: Container;
   private buttonText: Text;
   private introTimer = 0;
   private pulseTimer = 0;
   private glowStrength = 0;
   private cardCenterY = GAME_HEIGHT * 0.52;
+  private rewardDisplayAmount = 0;
+  private rewardTargetAmount = 0;
+  private rewardTickTimer = 0;
+  private readonly rewardTickDuration = 0.9;
 
   constructor(onContinue: () => void, getMoney: () => number) {
     this.container = new Container();
@@ -87,11 +92,16 @@ export class WinScreen {
     this.rewardAmountText.y = GAME_HEIGHT * 0.585;
     this.content.addChild(this.rewardAmountText);
 
+    this.buttonContainer = new Container();
+    this.buttonContainer.x = GAME_WIDTH / 2;
+    this.buttonContainer.y = GAME_HEIGHT * 0.74 + 33;
+    this.content.addChild(this.buttonContainer);
+
     const btnBg = new Graphics();
-    btnBg.roundRect(GAME_WIDTH / 2 - 150, GAME_HEIGHT * 0.74, 300, 66, 14);
+    btnBg.roundRect(-150, -33, 300, 66, 14);
     btnBg.fill({ color: 0xef3b39 });
     btnBg.stroke({ color: 0x901d1b, width: 3 });
-    this.content.addChild(btnBg);
+    this.buttonContainer.addChild(btnBg);
 
     this.buttonText = new Text({
       text: "INSTALL AND EARN",
@@ -104,19 +114,21 @@ export class WinScreen {
       }),
     });
     this.buttonText.anchor.set(0.5);
-    this.buttonText.x = GAME_WIDTH / 2;
-    this.buttonText.y = GAME_HEIGHT * 0.74 + 33;
-    this.content.addChild(this.buttonText);
+    this.buttonContainer.addChild(this.buttonText);
   }
 
   show(money: number) {
-    this.rewardAmountText.text = `$${money.toFixed(2)}`;
+    this.rewardTargetAmount = money;
+    this.rewardDisplayAmount = 0;
+    this.rewardTickTimer = 0;
+    this.rewardAmountText.text = "$0.00";
     this.introTimer = 0;
     this.pulseTimer = 0;
     this.content.alpha = 0;
     this.content.scale.set(0.9);
     this.content.x = GAME_WIDTH * 0.03;
     this.content.y = GAME_HEIGHT * 0.02;
+    this.buttonContainer.scale.set(1);
   }
 
   update(dt: number) {
@@ -126,6 +138,13 @@ export class WinScreen {
     const t = Math.min(this.introTimer / 0.48, 1);
     const eased = 1 - Math.pow(1 - t, 3);
     const pulse = Math.sin(this.pulseTimer * 5.4) * 0.5 + 0.5;
+    this.rewardTickTimer = Math.min(this.rewardTickDuration, this.rewardTickTimer + dt);
+    const rewardProgress = this.rewardTickTimer / this.rewardTickDuration;
+    const rewardEased = 1 - Math.pow(1 - rewardProgress, 3);
+    this.rewardDisplayAmount = Number((this.rewardTargetAmount * rewardEased).toFixed(2));
+    this.rewardAmountText.text = `$${this.rewardDisplayAmount.toFixed(2)}`;
+    const buttonScale = 1 + Math.sin(this.pulseTimer * 6.4) * 0.095;
+    this.buttonContainer.scale.set(buttonScale);
     this.content.alpha = eased;
     this.content.scale.set(0.9 + eased * 0.12 + pulse * 0.018);
     this.content.x = GAME_WIDTH * 0.035 * (1 - eased);
@@ -151,6 +170,8 @@ export class WinScreen {
       introActive: this.introTimer < 0.48,
       contentScale: this.content.scale.x,
       accentGlowStrength: this.glowStrength,
+      ctaButtonScale: this.buttonContainer.scale.x,
+      rewardDisplayAmount: this.rewardDisplayAmount,
     };
   }
 }

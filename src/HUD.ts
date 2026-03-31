@@ -128,6 +128,9 @@ export class HUD {
     this.muteSlash.visible = false;
     this.muteButton.addChild(this.muteSlash);
 
+    this.muteButton.on("pointerdown", (event) => {
+      event.stopPropagation();
+    });
     this.muteButton.on("pointertap", (event) => {
       event.stopPropagation();
       onToggleMute();
@@ -293,6 +296,7 @@ export class HUD {
   getDebugMeta() {
     return {
       counterTop: this.moneyContainer.y,
+      muteCenterX: this.muteButton.x,
       muteTop: this.muteButton.y - 18,
       muteCenterY: this.muteButton.y,
       counterCenterY: this.moneyContainer.y + 28,

@@ -15,6 +15,7 @@ import { PraisePopup } from "./PraisePopup";
 import { SoundManager } from "./utils/sounds";
 import { inflateBounds, intersects, isCollectibleCollected, shrinkBounds } from "./utils/collision";
 import { shouldShowHudFooter } from "./utils/uiState";
+import { ParticleSystem } from "./ParticleSystem";
 
 export enum GameState {
   START = "start",
@@ -35,6 +36,7 @@ export class Game {
   private background!: Background;
   private player!: Player;
   private level!: Level;
+  private particles!: ParticleSystem;
   private hud!: HUD;
   private finishRibbon!: FinishRibbon;
   private praisePopup!: PraisePopup;
@@ -80,6 +82,9 @@ export class Game {
 
     this.level = new Level(this.gameContainer);
 
+    this.particles = new ParticleSystem();
+    this.gameContainer.addChild(this.particles.container);
+
     this.finishRibbon = new FinishRibbon();
     this.gameContainer.addChild(this.finishRibbon.container);
 
@@ -121,7 +126,12 @@ export class Game {
 
     this.app.stage.eventMode = "static";
     this.app.stage.hitArea = this.app.screen;
-    this.app.stage.on("pointerdown", () => this.onTap());
+    this.app.stage.on("pointertap", (event) => {
+      if (event.target !== this.app.stage) {
+        return;
+      }
+      this.onTap();
+    });
 
     this.setState(GameState.START);
 
@@ -186,11 +196,11 @@ export class Game {
         break;
       case GameState.WIN:
         this.sounds.playClick();
-        this.setState(GameState.CTA);
+        this.ctaScreen.triggerCTA();
         break;
       case GameState.LOSE:
         this.sounds.playClick();
-        this.setState(GameState.CTA);
+        this.ctaScreen.triggerCTA();
         break;
       case GameState.CTA:
         this.sounds.playClick();
@@ -204,6 +214,7 @@ export class Game {
     this.winScreen.update(dt);
     this.ctaScreen.update(dt);
     this.hud.update(dt);
+    this.particles.update(dt);
     this.updateEndZoom(dt);
 
     if (this.state === GameState.START) {
@@ -290,27 +301,10 @@ export class Game {
       const collectibleBounds = collectible.getBounds();
       if (isCollectibleCollected(playerBounds, collectibleBounds, PICKUP_RADIUS)) {
         collectible.collect();
-        this.money += COLLECTIBLE_VALUE;
-        this.collectCount++;
-        this.hud.updateMoney(this.money);
-        this.sounds.playCollect();
-        this.hud.spawnRewardFly(
-          this.resolveRewardFlyTexture(false),
+        this.collectPickupReward(
           collectibleBounds.x + collectibleBounds.width / 2,
-          collectibleBounds.y + collectibleBounds.height / 2,
-          "cash",
-          () => this.hud.triggerCounterPop()
+          collectibleBounds.y + collectibleBounds.height / 2
         );
-
-        if (this.collectCount % 3 === 0) {
-          const phrase = PRAISE_PHRASES[this.praiseIndex % PRAISE_PHRASES.length];
-          this.praisePopup.show(
-            phrase,
-            collectibleBounds.x + collectibleBounds.width / 2,
-            collectibleBounds.y - 50
-          );
-          this.praiseIndex++;
-        }
       }
     }
 
@@ -399,16 +393,19 @@ export class Game {
   private shakeScreen() {
     const original = { x: this.gameContainer.x, y: this.gameContainer.y };
     let elapsed = 0;
+    const duration = 150;
     const shakeCallback = (t: any) => {
       elapsed += t.deltaMS;
-      if (elapsed > 200) {
+      if (elapsed > duration) {
         this.gameContainer.x = original.x;
         this.gameContainer.y = original.y;
         this.app.ticker.remove(shakeCallback);
         return;
       }
-      this.gameContainer.x = original.x + (Math.random() - 0.5) * 10;
-      this.gameContainer.y = original.y + (Math.random() - 0.5) * 10;
+      const decay = 1 - elapsed / duration;
+      const magnitude = 12 * decay;
+      this.gameContainer.x = original.x + (Math.random() - 0.5) * magnitude * 2;
+      this.gameContainer.y = original.y + (Math.random() - 0.5) * magnitude * 2;
     };
     this.app.ticker.add(shakeCallback);
   }
@@ -427,6 +424,11 @@ export class Game {
       state: this.state,
       lives: this.lives,
       money: this.money,
+      sound: this.sounds.getDebugState(),
+      background: this.background.getDebugMeta(),
+      player: this.player.getDebugMeta(),
+      finish: this.finishRibbon.getDebugMeta(),
+      particles: this.particles.getDebugMeta(),
       nearMissCount: this.nearMissCount,
       lastNearMissLabel: this.lastNearMissLabel,
       footerVisible: this.hud.isFooterVisible(),
@@ -441,6 +443,10 @@ export class Game {
       screenIntroActive: screenMeta?.introActive ?? false,
       screenContentScale: screenMeta?.contentScale ?? 1,
       screenAccentGlowStrength: screenMeta?.accentGlowStrength ?? 0,
+      ctaButtonScale: screenMeta?.ctaButtonScale ?? 1,
+      rewardDisplayAmount: screenMeta?.rewardDisplayAmount ?? null,
+      countdownDanger: screenMeta?.countdownDanger ?? false,
+      countdownScale: screenMeta?.countdownScale ?? 1,
       countdownLabel: screenMeta?.countdownLabel ?? null,
     };
   }
@@ -462,6 +468,10 @@ export class Game {
     this.applyDamage();
   }
 
+  debugCollectPickup() {
+    this.collectPickupReward(260, 520);
+  }
+
   debugSpawnRewardFly() {
     this.hud.spawnRewardFly(this.resolveRewardFlyTexture(false), 220, 540, "cash", () =>
       this.hud.triggerCounterPop()
@@ -475,6 +485,10 @@ export class Game {
   debugSetDistance(distance: number) {
     this.level.setCurrentDistance(distance);
     this.level.update(0);
+  }
+
+  debugSetLoseTimer(seconds: number) {
+    this.loseScreen.debugSetTimer(seconds);
   }
 
   private applyDamage() {
@@ -491,6 +505,8 @@ export class Game {
     this.player.setInvincible(true);
     this.player.playHurt();
     this.sounds.playHit();
+    const playerBounds = this.player.getBounds();
+    this.particles.burstHit(playerBounds.x + playerBounds.width / 2, playerBounds.y + 24);
     this.triggerDamageFlash();
     this.shakeScreen();
     return false;
@@ -523,5 +539,22 @@ export class Game {
       (Assets.get("paypalCard") as Texture) ||
       (Assets.get("paypalCounter") as Texture)
     );
+  }
+
+  private collectPickupReward(x: number, y: number) {
+    this.money += COLLECTIBLE_VALUE;
+    this.collectCount++;
+    this.hud.updateMoney(this.money);
+    this.sounds.playCollect();
+    this.particles.burstCollect(x, y);
+    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(false), x, y, "cash", () =>
+      this.hud.triggerCounterPop()
+    );
+
+    if (this.collectCount % 3 === 0) {
+      const phrase = PRAISE_PHRASES[this.praiseIndex % PRAISE_PHRASES.length];
+      this.praisePopup.show(phrase, x, y - 50);
+      this.praiseIndex++;
+    }
   }
 }

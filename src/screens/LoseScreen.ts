@@ -8,8 +8,10 @@ export class LoseScreen {
   private panel: Container;
   private amountText: Text;
   private countdownText: Text;
+  private buttonContainer: Container;
   private buttonText: Text;
   private timer = 0;
+  private countdownDanger = false;
 
   constructor(onRetry: () => void, getMoney: () => number) {
     this.container = new Container();
@@ -124,11 +126,16 @@ export class LoseScreen {
     payment.y = GAME_HEIGHT * 0.70;
     this.panel.addChild(payment);
 
+    this.buttonContainer = new Container();
+    this.buttonContainer.x = GAME_WIDTH / 2;
+    this.buttonContainer.y = GAME_HEIGHT * 0.74 + 30;
+    this.panel.addChild(this.buttonContainer);
+
     const btn = new Graphics();
-    btn.roundRect(GAME_WIDTH / 2 - 148, GAME_HEIGHT * 0.74, 296, 60, 14);
+    btn.roundRect(-148, -30, 296, 60, 14);
     btn.fill({ color: 0xef3b39 });
     btn.stroke({ color: 0x901d1b, width: 3 });
-    this.panel.addChild(btn);
+    this.buttonContainer.addChild(btn);
 
     this.buttonText = new Text({
       text: "INSTALL AND EARN",
@@ -141,9 +148,7 @@ export class LoseScreen {
       }),
     });
     this.buttonText.anchor.set(0.5);
-    this.buttonText.x = GAME_WIDTH / 2;
-    this.buttonText.y = GAME_HEIGHT * 0.74 + 30;
-    this.panel.addChild(this.buttonText);
+    this.buttonContainer.addChild(this.buttonText);
   }
 
   play() {
@@ -159,6 +164,10 @@ export class LoseScreen {
     }
     this.countdownText.text = "00:56";
     this.amountText.text = `$${this.getMoney().toFixed(2)}`;
+    this.countdownDanger = false;
+    this.countdownText.style.fill = 0xffffff;
+    this.countdownText.scale.set(1);
+    this.buttonContainer.scale.set(1);
   }
 
   update(dt: number) {
@@ -180,6 +189,27 @@ export class LoseScreen {
 
     const secondsLeft = Math.max(0, 56 - Math.floor(this.timer));
     this.countdownText.text = `00:${String(secondsLeft).padStart(2, "0")}`;
+    const buttonScale = 1 + Math.sin(this.timer * 6.1) * 0.09;
+    this.buttonContainer.scale.set(buttonScale);
+    this.countdownDanger = secondsLeft < 10;
+    if (this.countdownDanger) {
+      const pulse = Math.sin(this.timer * 9.4) * 0.5 + 0.5;
+      this.countdownText.style.fill = 0xff5353;
+      this.countdownText.scale.set(1.05 + pulse * 0.14);
+    } else {
+      this.countdownText.style.fill = 0xffffff;
+      this.countdownText.scale.set(1);
+    }
+  }
+
+  debugSetTimer(seconds: number) {
+    this.timer = Math.max(0, seconds);
+    this.panel.visible = this.timer >= 0.45;
+    this.panel.alpha = this.panel.visible ? 1 : 0;
+    if (this.failSprite) {
+      this.failSprite.alpha = this.panel.visible ? 0 : 1;
+    }
+    this.update(0);
   }
 
   getDebugMeta() {
@@ -188,6 +218,9 @@ export class LoseScreen {
       hasSkyBurstOverlay: false,
       primaryCtaLabel: this.buttonText.text,
       countdownLabel: this.countdownText.text,
+      countdownDanger: this.countdownDanger,
+      countdownScale: this.countdownText.scale.x,
+      ctaButtonScale: this.buttonContainer.scale.x,
     };
   }
 }

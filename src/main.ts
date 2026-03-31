@@ -9,8 +9,10 @@ declare global {
       setState: (state: string) => void;
       setMoney: (money: number) => void;
       setDistance: (distance: number) => void;
+      setLoseTimer: (seconds: number) => void;
       tap: () => void;
       obstacleHit: () => void;
+      collectPickup: () => void;
       spawnRewardFly: () => void;
       triggerNearMiss: () => void;
     };
@@ -53,8 +55,10 @@ async function init() {
     setState: (state: string) => game.debugSetState(state as any),
     setMoney: (money: number) => game.debugSetMoney(money),
     setDistance: (distance: number) => game.debugSetDistance(distance),
+    setLoseTimer: (seconds: number) => game.debugSetLoseTimer(seconds),
     tap: () => game.debugTap(),
     obstacleHit: () => game.debugObstacleHit(),
+    collectPickup: () => game.debugCollectPickup(),
     spawnRewardFly: () => game.debugSpawnRewardFly(),
     triggerNearMiss: () => game.debugTriggerNearMiss(),
   };

@@ -1,47 +1,16 @@
-import clickUrl from "../../assets/sfx/click.wav";
-import collectUrl from "../../assets/sfx/collect.wav";
-import hitUrl from "../../assets/sfx/hit.wav";
-import jumpUrl from "../../assets/sfx/jump.wav";
-import loseUrl from "../../assets/sfx/lose.wav";
-import winUrl from "../../assets/sfx/win.wav";
-
-type SoundKey = "click" | "collect" | "hit" | "jump" | "lose" | "win";
-
 export class SoundManager {
   private unlocked = false;
   private muted = false;
-  private clips: Record<SoundKey, HTMLAudioElement>;
   private musicContext: AudioContext | null = null;
   private musicSource: AudioBufferSourceNode | null = null;
   private musicGain: GainNode | null = null;
-
-  constructor() {
-    this.clips = {
-      click: this.createClip(clickUrl),
-      collect: this.createClip(collectUrl),
-      hit: this.createClip(hitUrl),
-      jump: this.createClip(jumpUrl),
-      lose: this.createClip(loseUrl),
-      win: this.createClip(winUrl),
-    };
-  }
+  private backgroundMusicEnabled = false;
 
   unlock() {
     if (this.unlocked) return;
     this.unlocked = true;
     this.ensureMusicContext();
-    const clip = this.clips.click;
-    clip.muted = true;
-    clip.currentTime = 0;
-    void clip.play()
-      .then(() => {
-        clip.pause();
-        clip.currentTime = 0;
-        clip.muted = false;
-      })
-      .catch(() => {
-        clip.muted = false;
-      });
+    this.resumeMusicContext();
   }
 
   toggleMute() {
@@ -51,20 +20,16 @@ export class SoundManager {
 
   setMuted(value: boolean) {
     this.muted = value;
-    for (const clip of Object.values(this.clips)) {
-      clip.muted = value;
-      if (value) {
-        clip.pause();
-      }
-    }
-
     if (value) {
-      this.stopBackgroundMusic();
+      this.teardownBackgroundMusic();
       return;
     }
 
     if (this.unlocked) {
       this.resumeMusicContext();
+      if (this.backgroundMusicEnabled) {
+        this.playBackgroundMusic();
+      }
     }
   }
 
@@ -73,30 +38,37 @@ export class SoundManager {
   }
 
   playCollect() {
-    this.play("collect", 0.72);
+    this.playSynth(880, 0.12, 0.3, "sine", 1760);
+    setTimeout(() => this.playSynth(1320, 0.08, 0.2, "sine"), 60);
   }
 
   playHit() {
-    this.play("hit", 0.8);
+    this.playSynth(200, 0.25, 0.4, "sawtooth", 80);
   }
 
   playLose() {
-    this.play("lose", 0.85);
+    this.playSynth(440, 0.15, 0.3, "sine", 220);
+    setTimeout(() => this.playSynth(330, 0.15, 0.25, "sine", 165), 150);
+    setTimeout(() => this.playSynth(220, 0.4, 0.2, "sine", 110), 300);
   }
 
   playWin() {
-    this.play("win", 0.8);
+    this.playSynth(523, 0.12, 0.3, "sine");
+    setTimeout(() => this.playSynth(659, 0.12, 0.3, "sine"), 100);
+    setTimeout(() => this.playSynth(784, 0.12, 0.3, "sine"), 200);
+    setTimeout(() => this.playSynth(1047, 0.3, 0.35, "sine"), 300);
   }
 
   playJump() {
-    this.play("jump", 0.68);
+    this.playSynth(400, 0.15, 0.2, "sine", 800);
   }
 
   playClick() {
-    this.play("click", 0.6);
+    this.playSynth(660, 0.06, 0.15, "sine");
   }
 
   playBackgroundMusic() {
+    this.backgroundMusicEnabled = true;
     if (!this.unlocked || this.muted || this.musicSource) return;
 
     const context = this.ensureMusicContext();
@@ -120,6 +92,11 @@ export class SoundManager {
   }
 
   stopBackgroundMusic() {
+    this.backgroundMusicEnabled = false;
+    this.teardownBackgroundMusic();
+  }
+
+  private teardownBackgroundMusic() {
     if (this.musicSource) {
       this.musicSource.stop();
       this.musicSource.disconnect();
@@ -141,23 +118,38 @@ export class SoundManager {
     };
   }
 
-  private createClip(src: string) {
-    const audio = new Audio(src);
-    audio.preload = "auto";
-    audio.load();
-    return audio;
-  }
-
-  private play(key: SoundKey, volume: number) {
+  private playSynth(
+    frequency: number,
+    duration: number,
+    volume: number,
+    type: OscillatorType = "sine",
+    sweep?: number
+  ) {
     if (!this.unlocked || this.muted) return;
 
-    const clip = this.clips[key];
-    clip.pause();
-    clip.currentTime = 0;
-    clip.volume = volume;
-    void clip.play().catch(() => {
-      // Browsers may still reject if the initial gesture was blocked.
-    });
+    const context = this.ensureMusicContext();
+    if (!context) return;
+
+    this.resumeMusicContext();
+
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const startTime = context.currentTime;
+    const endTime = startTime + duration;
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, startTime);
+    if (sweep) {
+      oscillator.frequency.exponentialRampToValueAtTime(Math.max(sweep, 1), endTime);
+    }
+
+    gain.gain.setValueAtTime(Math.max(volume, 0.001), startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, endTime);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(startTime);
+    oscillator.stop(endTime);
   }
 
   private ensureMusicContext() {

@@ -112,7 +112,7 @@ export class CTAScreen {
 
     this.pulseTimer += dt;
     const pulse = Math.sin(this.pulseTimer * 5.2) * 0.5 + 0.5;
-    const scale = 1 + Math.sin(this.pulseTimer * 4.4) * 0.055;
+    const scale = 1 + Math.sin(this.pulseTimer * 6.3) * 0.095;
     this.buttonContainer.scale.set(scale);
     this.content.y -= pulse * 4;
     this.glowStrength = 0.16 + pulse * 0.12;
@@ -181,6 +181,7 @@ export class CTAScreen {
       introActive: this.introTimer < 0.48,
       contentScale: this.content.scale.x,
       accentGlowStrength: this.glowStrength,
+      ctaButtonScale: this.buttonContainer.scale.x,
     };
   }
 }

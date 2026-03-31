@@ -3,6 +3,7 @@ import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X_RATIO, JUMP_HEIGHT, JUMP_DURATION, PL
 import { runnerSpritesheet } from "./utils/assets";
 
 export class Player {
+  private readonly baseScale = 0.54;
   container: Container;
   private runAnim: AnimatedSprite;
   private jumpAnim: AnimatedSprite;
@@ -13,6 +14,7 @@ export class Player {
   private jumpProgress = 0;
   private invincible = false;
   private blinkTimer = 0;
+  private landSquashTimer = 0;
 
   constructor() {
     this.container = new Container();
@@ -45,7 +47,7 @@ export class Player {
 
     this.currentAnim = this.runAnim;
 
-    this.container.scale.set(0.54);
+    this.container.scale.set(this.baseScale);
     this.container.x = GAME_WIDTH * PLAYER_X_RATIO;
     this.container.y = this.groundY;
   }
@@ -85,9 +87,26 @@ export class Player {
         this.jumpProgress = 0;
         this.jumping = false;
         this.container.y = this.groundY;
+        this.landSquashTimer = 0.12;
         this.switchAnim(this.runAnim);
       } else {
         this.container.y = this.groundY - JUMP_HEIGHT * Math.sin(Math.PI * this.jumpProgress);
+        const jumpPhase = Math.sin(Math.PI * this.jumpProgress);
+        const stretchX = 1 - jumpPhase * 0.12;
+        const stretchY = 1 + jumpPhase * 0.15;
+        this.container.scale.set(this.baseScale * stretchX, this.baseScale * stretchY);
+      }
+    }
+
+    if (!this.jumping) {
+      if (this.landSquashTimer > 0) {
+        this.landSquashTimer = Math.max(0, this.landSquashTimer - dt);
+        const progress = this.landSquashTimer / 0.12;
+        const squashX = 1 + progress * 0.12;
+        const squashY = 1 - progress * 0.1;
+        this.container.scale.set(this.baseScale * squashX, this.baseScale * squashY);
+      } else {
+        this.container.scale.set(this.baseScale);
       }
     }
 
@@ -122,6 +141,15 @@ export class Player {
       y: centerY - h / 2,
       width: w,
       height: h,
+    };
+  }
+
+  getDebugMeta() {
+    return {
+      jumping: this.jumping,
+      scaleX: Number(this.container.scale.x.toFixed(3)),
+      scaleY: Number(this.container.scale.y.toFixed(3)),
+      y: Number(this.container.y.toFixed(2)),
     };
   }
 }
