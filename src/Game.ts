@@ -133,6 +133,12 @@ export class Game {
     this.ctaScreen.container.visible = newState === GameState.CTA;
     this.hud.setFooterVisible(shouldShowHudFooter(newState));
 
+    if (newState === GameState.PLAYING || newState === GameState.TUTORIAL_PAUSE) {
+      this.sounds.playBackgroundMusic();
+    } else {
+      this.sounds.stopBackgroundMusic();
+    }
+
     if (newState === GameState.WIN) {
       this.sounds.playWin();
       this.winScreen.show(this.money);
@@ -232,7 +238,7 @@ export class Game {
   }
 
   private checkCollisions() {
-    const playerBounds = this.inflateBounds(this.player.getBounds(), 6);
+    const playerBounds = inflateBounds(this.player.getBounds(), 6);
 
     // Collectibles
     for (const collectible of this.level.getActiveCollectibles()) {
@@ -336,5 +342,23 @@ export class Game {
       this.gameContainer.y = original.y + (Math.random() - 0.5) * 10;
     };
     this.app.ticker.add(shakeCallback);
+  }
+
+  getDebugSnapshot() {
+    return {
+      state: this.state,
+      lives: this.lives,
+      money: this.money,
+      footerVisible: this.hud.isFooterVisible(),
+    };
+  }
+
+  debugSetState(state: GameState) {
+    this.setState(state);
+  }
+
+  debugSetMoney(money: number) {
+    this.money = money;
+    this.hud.updateMoney(money);
   }
 }
