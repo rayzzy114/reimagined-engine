@@ -16,11 +16,11 @@ export class FinishRibbon {
   private broken = false;
   private ribbonX = GAME_WIDTH + 200;
   private groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
-  private readonly torsoOffset = 148;
+  private readonly torsoOffset = 164;
   private readonly bannerY = this.groundY - this.torsoOffset;
   private readonly bannerWidth = 248;
-  private readonly bannerHeight = 24;
-  private readonly ribbonAngle = -0.22;
+  private readonly bannerHeight = 14;
+  private readonly ribbonAngle = -0.17;
   private leftBrokenState: BrokenTapeState = { vx: -180, vy: -140, rotationSpeed: -2.4 };
   private rightBrokenState: BrokenTapeState = { vx: 180, vy: -120, rotationSpeed: 2.1 };
 
@@ -50,41 +50,41 @@ export class FinishRibbon {
     const rope = new Graphics();
 
     const left = mode === "right" ? 0 : -width;
-    const checkerWidth = 16;
-    const ropeTopY = -this.bannerHeight / 2 - 3;
-    const ropeBottomY = this.bannerHeight / 2 + 3;
+    const checkerWidth = 12;
+    const ropeTopY = -this.bannerHeight / 2 - 2;
+    const ropeBottomY = this.bannerHeight / 2 + 2;
 
     for (let index = 0; index < Math.ceil(width / checkerWidth); index++) {
       const cellX = left + index * checkerWidth;
       body.rect(cellX, -this.bannerHeight / 2, checkerWidth, this.bannerHeight);
-      body.fill({ color: index % 2 === 0 ? 0x101010 : 0xf7f4ea });
+      body.fill({ color: index % 2 === 0 ? 0x151515 : 0xf8f5ee });
     }
 
-    body.roundRect(left, -this.bannerHeight / 2, width, this.bannerHeight, 8);
-    body.stroke({ color: 0xc76833, width: 2, alpha: 0.9 });
+    body.roundRect(left, -this.bannerHeight / 2, width, this.bannerHeight, 6);
+    body.stroke({ color: 0xd7c2ab, width: 1.4, alpha: 0.92 });
 
     rope.moveTo(left, ropeTopY);
     rope.lineTo(left + width, ropeTopY);
-    rope.stroke({ color: 0x8f4e25, width: 3 });
+    rope.stroke({ color: 0xcba17a, width: 2.2 });
     rope.moveTo(left, ropeBottomY);
     rope.lineTo(left + width, ropeBottomY);
-    rope.stroke({ color: 0x8f4e25, width: 3 });
+    rope.stroke({ color: 0xcba17a, width: 2.2 });
 
-    for (let x = 0; x <= width; x += 12) {
+    for (let x = 0; x <= width; x += 10) {
       const worldX = left + x;
-      rope.circle(worldX, ropeTopY, 2.5);
-      rope.fill({ color: 0xd48a54 });
-      rope.circle(worldX, ropeBottomY, 2.5);
-      rope.fill({ color: 0xd48a54 });
+      rope.circle(worldX, ropeTopY, 1.8);
+      rope.fill({ color: 0xe2bb95, alpha: 0.95 });
+      rope.circle(worldX, ropeBottomY, 1.8);
+      rope.fill({ color: 0xe2bb95, alpha: 0.95 });
 
       if (x < width) {
-        const nextX = Math.min(left + width, worldX + 8);
-        rope.moveTo(worldX, ropeTopY - 2);
-        rope.lineTo(nextX, ropeTopY + 2);
-        rope.stroke({ color: 0xe0a16e, width: 1.2, alpha: 0.8 });
-        rope.moveTo(worldX, ropeBottomY - 2);
-        rope.lineTo(nextX, ropeBottomY + 2);
-        rope.stroke({ color: 0xe0a16e, width: 1.2, alpha: 0.8 });
+        const nextX = Math.min(left + width, worldX + 6);
+        rope.moveTo(worldX, ropeTopY - 1.2);
+        rope.lineTo(nextX, ropeTopY + 1.2);
+        rope.stroke({ color: 0xf3d7bc, width: 0.9, alpha: 0.7 });
+        rope.moveTo(worldX, ropeBottomY - 1.2);
+        rope.lineTo(nextX, ropeBottomY + 1.2);
+        rope.stroke({ color: 0xf3d7bc, width: 0.9, alpha: 0.7 });
       }
     }
 
@@ -115,13 +115,13 @@ export class FinishRibbon {
     this.broken = true;
     this.intactRibbon.visible = false;
 
-    const brokenY = Math.max(this.bannerY - 12, Math.min(this.bannerY + 12, playerY));
+    const brokenY = Math.max(this.bannerY - 10, Math.min(this.bannerY + 10, playerY));
     this.leftBrokenRibbon.visible = true;
     this.rightBrokenRibbon.visible = true;
     this.leftBrokenRibbon.position.set(-8, brokenY);
     this.rightBrokenRibbon.position.set(8, brokenY);
-    this.leftBrokenRibbon.rotation = this.ribbonAngle - 0.08;
-    this.rightBrokenRibbon.rotation = this.ribbonAngle + 0.12;
+    this.leftBrokenRibbon.rotation = this.ribbonAngle - 0.05;
+    this.rightBrokenRibbon.rotation = this.ribbonAngle + 0.08;
   }
 
   update(dt: number) {
