@@ -108,24 +108,24 @@ export class Level {
     switch (item.type) {
       case EntityType.COLLECTIBLE: {
         const isPaypalBanner = this.shouldUsePaypalBanner(item);
-        const primaryTex = isPaypalBanner ? Assets.get("coin") as Texture : Assets.get("dollar") as Texture;
-        const fallbackTex = isPaypalBanner ? Assets.get("dollar") as Texture : Assets.get("coin") as Texture;
+        const primaryTex = isPaypalBanner ? Assets.get("paypalCounter") as Texture : Assets.get("dollar") as Texture;
+        const fallbackTex = isPaypalBanner ? Assets.get("paypalCard") as Texture : Assets.get("coin") as Texture;
         const tex = primaryTex || fallbackTex;
         if (!tex) return;
         mainSprite = new Sprite(tex);
         mainSprite.anchor.set(0.5, 0.5);
-        mainSprite.scale.set(isPaypalBanner ? 0.14 : 0.15);
+        mainSprite.scale.set(isPaypalBanner ? 0.2 : 0.15);
 
         glow = new Sprite(Texture.WHITE);
         glow.anchor.set(0.5);
-        glow.width = 58;
-        glow.height = 24;
+        glow.width = isPaypalBanner ? 92 : 58;
+        glow.height = isPaypalBanner ? 42 : 24;
         glow.alpha = 0.12;
         glow.tint = 0xffd86b;
         container.addChild(glow);
         
         container.addChild(mainSprite);
-        y = this.groundY - yOffset - 40;
+        y = this.groundY - yOffset - (isPaypalBanner ? 56 : 40);
         break;
       }
       case EntityType.ENEMY: {

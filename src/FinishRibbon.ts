@@ -37,12 +37,10 @@ export class FinishRibbon {
     this.leftBrokenTape = this.createSprite("finishTapeLeft", 1, 0.5);
     this.rightBrokenTape = this.createSprite("finishTapeRight", 0, 0.5);
 
-    this.leftPost.rotation = Math.PI / 2;
-    this.rightPost.rotation = Math.PI / 2;
     this.leftPost.height = 560;
     this.rightPost.height = 560;
-    this.leftPost.width = 14;
-    this.rightPost.width = 14;
+    this.leftPost.width = 18;
+    this.rightPost.width = 18;
 
     this.finishBanner.width = 300;
     this.finishBanner.height = 42;
@@ -73,8 +71,8 @@ export class FinishRibbon {
   }
 
   private layoutFrame() {
-    const leftX = -130;
-    const rightX = 130;
+    const leftX = -148;
+    const rightX = 148;
     const topY = GAME_HEIGHT * 0.34;
 
     this.leftPost.position.set(leftX, topY);

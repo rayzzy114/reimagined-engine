@@ -17,7 +17,7 @@ export class HUD {
     // Hearts (drawn as Graphics since we don't have a heart asset that's separate)
     const heartContainer = new Container();
     heartContainer.x = 30;
-    heartContainer.y = 40;
+    heartContainer.y = 24;
 
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.createHeart(0xff4466);
@@ -29,7 +29,7 @@ export class HUD {
 
     const moneyContainer = new Container();
     moneyContainer.x = GAME_WIDTH - 172;
-    moneyContainer.y = 18;
+    moneyContainer.y = 6;
 
     const counterTex = Assets.get("paypalCounter") as Texture;
     if (counterTex) {
@@ -57,7 +57,7 @@ export class HUD {
     });
     this.moneyText.anchor.set(1, 0.5);
     this.moneyText.x = 152;
-    this.moneyText.y = 27;
+    this.moneyText.y = 21;
     moneyContainer.addChild(this.moneyText);
 
     this.container.addChild(moneyContainer);
@@ -66,7 +66,7 @@ export class HUD {
     this.muteButton.eventMode = "static";
     this.muteButton.cursor = "pointer";
     this.muteButton.x = GAME_WIDTH - 220;
-    this.muteButton.y = 34;
+    this.muteButton.y = 22;
 
     const muteBg = new Graphics();
     muteBg.roundRect(-18, -18, 36, 36, 10);
@@ -156,6 +156,10 @@ export class HUD {
 
   setFooterVisible(value: boolean) {
     this.footerContainer.visible = value;
+  }
+
+  isFooterVisible() {
+    return this.footerContainer.visible;
   }
 
   setMuted(value: boolean) {
