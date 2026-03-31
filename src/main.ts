@@ -21,7 +21,7 @@ async function init() {
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     backgroundColor: 0x87ceeb,
-    resolution: window.devicePixelRatio || 1,
+    resolution: Math.min(3, Math.max(2, window.devicePixelRatio || 1)),
     autoDensity: true,
     antialias: true,
   });

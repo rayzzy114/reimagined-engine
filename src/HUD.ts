@@ -67,7 +67,7 @@ export class HUD {
     this.muteButton.eventMode = "static";
     this.muteButton.cursor = "pointer";
     this.muteButton.x = GAME_WIDTH - 220;
-    this.muteButton.y = 24;
+    this.muteButton.y = this.moneyContainer.y + 28;
 
     const muteBg = new Graphics();
     muteBg.roundRect(-18, -18, 36, 36, 10);

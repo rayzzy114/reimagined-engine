@@ -62,8 +62,8 @@ test("top hud keeps the sound button aligned with the paypal counter", async ({ 
   await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
 
   const snapshot = await page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot());
-  expect(Math.abs(snapshot.hud.muteTop - snapshot.hud.counterTop)).toBeLessThanOrEqual(2);
-  expect(Math.abs(snapshot.hud.muteCenterY - snapshot.hud.counterCenterY)).toBeLessThanOrEqual(12);
+  expect(snapshot.hud.muteTop).toBeGreaterThanOrEqual(snapshot.hud.counterTop);
+  expect(Math.abs(snapshot.hud.muteCenterY - snapshot.hud.counterCenterY)).toBeLessThanOrEqual(2);
 });
 
 test("win state uses the payoff overlay style without the sky burst", async ({ page }) => {

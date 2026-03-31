@@ -225,11 +225,11 @@ export class Level {
         }
 
         if (this.type === EntityType.OBSTACLE) {
-          const w = spriteW * 0.92;
-          const h = spriteH * 0.72;
+          const w = Math.max(120, spriteW * 1.08);
+          const h = Math.max(88, spriteH * 0.86);
           return {
             x: this.x - w / 2,
-            y: this.y - h + 12,
+            y: this.y - h + 18,
             width: w,
             height: h,
           };

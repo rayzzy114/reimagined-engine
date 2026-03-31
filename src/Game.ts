@@ -244,6 +244,12 @@ export class Game {
 
   private checkCollisions() {
     const playerBounds = inflateBounds(this.player.getBounds(), 6);
+    const playerFeetBounds = {
+      x: playerBounds.x - 6,
+      y: playerBounds.y + playerBounds.height * 0.45,
+      width: playerBounds.width + 12,
+      height: playerBounds.height * 0.7,
+    };
 
     // Collectibles
     for (const collectible of this.level.getActiveCollectibles()) {
@@ -285,8 +291,8 @@ export class Game {
     // Obstacles
     if (!this.isInvincible) {
       for (const obstacle of this.level.getActiveObstacles()) {
-        const obstacleBounds = obstacle.getBounds();
-        if (intersects(playerBounds, obstacleBounds)) {
+        const obstacleBounds = inflateBounds(obstacle.getBounds(), 14);
+        if (intersects(playerFeetBounds, obstacleBounds)) {
           if (this.applyDamage()) {
             return;
           }
