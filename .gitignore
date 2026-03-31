@@ -6,5 +6,4 @@ dist/
 .claude/
 .firecrawl/
 test-results/
-tests/
-playwright.config.ts
+playwright-report/

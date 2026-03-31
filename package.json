@@ -1,18 +1,26 @@
 {
-  "name": "playable",
+  "name": "playable-runner",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Single-file Pixi.js playable runner built to match the Playoff reference creative.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "size": "node -e \"const fs=require('node:fs');const bytes=fs.statSync('dist/index.html').size;const mb=(bytes/1024/1024).toFixed(2);console.log(mb+' MB');if(bytes>5*1024*1024){process.exit(1);}\"",
+    "package:submission": "npm run build && npm run size && mkdir -p release && cp dist/index.html release/playable-runner.html",
+    "verify:submission": "npm test && npm run build && npm run size && playwright test tests/e2e/playable-smoke.spec.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "npm run build && playwright test"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "pixi",
+    "playable",
+    "runner",
+    "advertising",
+    "single-file"
+  ],
+  "author": "Roxy",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
