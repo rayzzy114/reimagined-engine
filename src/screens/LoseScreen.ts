@@ -7,6 +7,7 @@ export class LoseScreen {
   private failSprite: Sprite | null = null;
   private panel: Container;
   private amountText: Text;
+  private buttonText: Text;
   private timer = 0;
 
   constructor(onRetry: () => void, getMoney: () => number) {
@@ -16,8 +17,13 @@ export class LoseScreen {
 
     const overlay = new Graphics();
     overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x121018, alpha: 0.68 });
+    overlay.fill({ color: 0x121018, alpha: 0.72 });
     this.container.addChild(overlay);
+
+    const topCapsule = new Graphics();
+    topCapsule.roundRect(GAME_WIDTH / 2 - 88, 18, 176, 34, 17);
+    topCapsule.fill({ color: 0x101010, alpha: 0.95 });
+    this.container.addChild(topCapsule);
 
     const failTex = Assets.get("failImage") as Texture;
     if (failTex) {
@@ -34,24 +40,13 @@ export class LoseScreen {
     this.panel.alpha = 0;
     this.container.addChild(this.panel);
 
-    const shadow = new Graphics();
-    shadow.roundRect(GAME_WIDTH / 2 - 150, GAME_HEIGHT * 0.40 + 8, 300, 205, 22);
-    shadow.fill({ color: 0x000000, alpha: 0.18 });
-    this.panel.addChild(shadow);
-
-    const card = new Graphics();
-    card.roundRect(GAME_WIDTH / 2 - 150, GAME_HEIGHT * 0.40, 300, 205, 22);
-    card.fill({ color: 0xffffff });
-    card.stroke({ color: 0xe4e7ef, width: 2 });
-    this.panel.addChild(card);
-
     const paypalCardTex = Assets.get("paypalCard") as Texture;
     if (paypalCardTex) {
       const logo = new Sprite(paypalCardTex);
       logo.anchor.set(0.5);
       logo.x = GAME_WIDTH / 2;
-      logo.y = GAME_HEIGHT * 0.47;
-      logo.scale.set(0.38);
+      logo.y = GAME_HEIGHT * 0.52;
+      logo.scale.set(0.44);
       this.panel.addChild(logo);
     }
 
@@ -66,8 +61,8 @@ export class LoseScreen {
       }),
     });
     this.amountText.anchor.set(0.5);
-    this.amountText.x = GAME_WIDTH / 2;
-    this.amountText.y = GAME_HEIGHT * 0.57;
+    this.amountText.x = GAME_WIDTH / 2 + 98;
+    this.amountText.y = GAME_HEIGHT * 0.585;
     this.panel.addChild(this.amountText);
 
     const title = new Text({
@@ -82,7 +77,7 @@ export class LoseScreen {
     });
     title.anchor.set(0.5);
     title.x = GAME_WIDTH / 2;
-    title.y = GAME_HEIGHT * 0.32;
+    title.y = GAME_HEIGHT * 0.26;
     this.panel.addChild(title);
 
     const subtitle = new Text({
@@ -97,7 +92,7 @@ export class LoseScreen {
     });
     subtitle.anchor.set(0.5);
     subtitle.x = GAME_WIDTH / 2;
-    subtitle.y = GAME_HEIGHT * 0.37;
+    subtitle.y = GAME_HEIGHT * 0.315;
     this.panel.addChild(subtitle);
 
     const countdown = new Text({
@@ -134,7 +129,7 @@ export class LoseScreen {
     btn.stroke({ color: 0x901d1b, width: 3 });
     this.panel.addChild(btn);
 
-    const btnText = new Text({
+    this.buttonText = new Text({
       text: "INSTALL AND EARN",
       style: new TextStyle({
         fontFamily: "PP Mori",
@@ -144,10 +139,10 @@ export class LoseScreen {
         stroke: { color: 0x7f1214, width: 3 },
       }),
     });
-    btnText.anchor.set(0.5);
-    btnText.x = GAME_WIDTH / 2;
-    btnText.y = GAME_HEIGHT * 0.74 + 30;
-    this.panel.addChild(btnText);
+    this.buttonText.anchor.set(0.5);
+    this.buttonText.x = GAME_WIDTH / 2;
+    this.buttonText.y = GAME_HEIGHT * 0.74 + 30;
+    this.panel.addChild(this.buttonText);
   }
 
   play() {
@@ -180,5 +175,13 @@ export class LoseScreen {
       this.panel.alpha = fade;
       if (this.failSprite) this.failSprite.alpha = 1 - fade;
     }
+  }
+
+  getDebugMeta() {
+    return {
+      overlayVariant: "install",
+      hasSkyBurstOverlay: false,
+      primaryCtaLabel: this.buttonText.text,
+    };
   }
 }

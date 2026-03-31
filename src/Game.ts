@@ -174,11 +174,16 @@ export class Game {
         this.sounds.playClick();
         this.setState(GameState.CTA);
         break;
+      case GameState.CTA:
+        this.sounds.playClick();
+        this.ctaScreen.triggerCTA();
+        break;
     }
   }
 
   private update(dt: number) {
     this.praisePopup.update(dt);
+    this.ctaScreen.update(dt);
 
     if (this.state === GameState.START) {
       this.startScreen.update(dt);
@@ -345,11 +350,24 @@ export class Game {
   }
 
   getDebugSnapshot() {
+    const screenMeta =
+      this.state === GameState.WIN
+        ? this.winScreen.getDebugMeta()
+        : this.state === GameState.LOSE
+          ? this.loseScreen.getDebugMeta()
+          : this.state === GameState.CTA
+            ? this.ctaScreen.getDebugMeta()
+            : null;
+
     return {
       state: this.state,
       lives: this.lives,
       money: this.money,
       footerVisible: this.hud.isFooterVisible(),
+      nextWarning: this.level.getNextWarningDebug(),
+      overlayVariant: screenMeta?.overlayVariant ?? null,
+      hasSkyBurstOverlay: screenMeta?.hasSkyBurstOverlay ?? false,
+      primaryCtaLabel: screenMeta?.primaryCtaLabel ?? null,
     };
   }
 
@@ -360,5 +378,9 @@ export class Game {
   debugSetMoney(money: number) {
     this.money = money;
     this.hud.updateMoney(money);
+  }
+
+  debugTap() {
+    this.onTap();
   }
 }

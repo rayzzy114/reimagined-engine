@@ -1,5 +1,5 @@
 import { Container, Sprite, AnimatedSprite, Texture, Assets, Text, TextStyle, Graphics } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, LEVEL_DATA, EntityType, EntityFlag, ENEMY_CHASE_SPEED, PLAYER_X_RATIO, LevelItem, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
+import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, LEVEL_DATA, EntityType, EntityFlag, ENEMY_CHASE_SPEED, LevelItem, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
 import { thiefSpritesheet } from "./utils/assets";
 
 export interface ActiveEntity {
@@ -14,6 +14,7 @@ export interface ActiveEntity {
   hit: boolean;
   flags?: EntityFlag[];
   warningLabel?: Text;
+  kind?: string;
 
   collect(): void;
   onHit(): void;
@@ -139,21 +140,10 @@ export class Level {
         break;
       }
       case EntityType.OBSTACLE: {
-        const rockContainer = new Container();
-        const rock = new Graphics();
-        rock.roundRect(-34, -18, 68, 28, 14);
-        rock.fill({ color: 0x8790a1 });
-        rock.stroke({ color: 0x5f6674, width: 3 });
-        rockContainer.addChild(rock);
-
-        const highlight = new Graphics();
-        highlight.roundRect(-18, -12, 36, 10, 5);
-        highlight.fill({ color: 0xd9ddea, alpha: 0.5 });
-        rockContainer.addChild(highlight);
-
-        mainSprite = rock;
-        container.addChild(rockContainer);
-        y = this.groundY - 10;
+        const cones = this.createConeCluster();
+        mainSprite = cones;
+        container.addChild(cones);
+        y = this.groundY - 6;
         break;
       }
       default:
@@ -170,10 +160,10 @@ export class Level {
         text: "EVADE!",
         style: new TextStyle({
           fontFamily: "PP Mori",
-          fontSize: 28,
+          fontSize: 30,
           fontWeight: "bold",
-          fill: 0xff0000,
-          stroke: { color: 0xffffff, width: 3 },
+          fill: 0xffffff,
+          stroke: { color: 0xcc2a1e, width: 4 },
         }),
       });
       warningLabel.anchor.set(0.5);
@@ -193,6 +183,7 @@ export class Level {
       hit: false,
       flags: item.flags ? [...item.flags] : undefined,
       warningLabel,
+      kind: item.type === EntityType.OBSTACLE ? "cone" : undefined,
 
       collect() {
         this.collected = true;
@@ -286,9 +277,80 @@ export class Level {
     return this.currentDistance;
   }
 
+  getNextWarningDebug() {
+    const warningObstacle = this.entities.find(
+      (entity) =>
+        entity.active &&
+        entity.type === EntityType.OBSTACLE &&
+        entity.flags?.includes(EntityFlag.SHOW_WARNING)
+    );
+
+    if (warningObstacle) {
+      return {
+        obstacleKind: warningObstacle.kind ?? "unknown",
+        label: "EVADE!",
+        x: warningObstacle.x,
+      };
+    }
+
+    const upcomingWarning = LEVEL_DATA.find(
+      (item) => item.type === EntityType.OBSTACLE && item.flags?.includes(EntityFlag.SHOW_WARNING)
+    );
+
+    if (!upcomingWarning) {
+      return null;
+    }
+
+    return {
+      obstacleKind: "cone",
+      label: "EVADE!",
+      x: upcomingWarning.distance * GAME_WIDTH,
+    };
+  }
+
   private shouldUsePaypalBanner(item: LevelItem) {
     if (item.type !== EntityType.COLLECTIBLE) return false;
     if (item.yOffset === undefined) return false;
     return Math.round(item.distance * 10) % 6 === 0;
+  }
+
+  private createConeCluster() {
+    const cluster = new Graphics();
+
+    this.drawCone(cluster, -40, 0, 0.86);
+    this.drawCone(cluster, 0, -12, 1);
+    this.drawCone(cluster, 38, 0, 0.82);
+
+    return cluster;
+  }
+
+  private drawCone(graphics: Graphics, x: number, y: number, scale: number) {
+    const coneHeight = 90 * scale;
+    const coneWidth = 42 * scale;
+    const baseWidth = 62 * scale;
+
+    graphics.moveTo(x - coneWidth / 2, y);
+    graphics.lineTo(x, y - coneHeight);
+    graphics.lineTo(x + coneWidth / 2, y);
+    graphics.closePath();
+    graphics.fill({ color: 0xff7b22 });
+    graphics.stroke({ color: 0xc84d12, width: 3 });
+
+    graphics.moveTo(x - coneWidth * 0.28, y - coneHeight * 0.34);
+    graphics.lineTo(x + coneWidth * 0.28, y - coneHeight * 0.34);
+    graphics.lineTo(x + coneWidth * 0.16, y - coneHeight * 0.2);
+    graphics.lineTo(x - coneWidth * 0.16, y - coneHeight * 0.2);
+    graphics.closePath();
+    graphics.fill({ color: 0xffffff });
+
+    graphics.moveTo(x - coneWidth * 0.2, y - coneHeight * 0.62);
+    graphics.lineTo(x + coneWidth * 0.2, y - coneHeight * 0.62);
+    graphics.lineTo(x + coneWidth * 0.1, y - coneHeight * 0.49);
+    graphics.lineTo(x - coneWidth * 0.1, y - coneHeight * 0.49);
+    graphics.closePath();
+    graphics.fill({ color: 0xffffff });
+
+    graphics.roundRect(x - baseWidth / 2, y - 10 * scale, baseWidth, 16 * scale, 6 * scale);
+    graphics.fill({ color: 0x161616 });
   }
 }

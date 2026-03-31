@@ -4,36 +4,29 @@ import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
 export class WinScreen {
   container: Container;
   private rewardAmountText: Text;
-  private getMoney: () => number;
+  private buttonText: Text;
 
   constructor(onContinue: () => void, getMoney: () => number) {
     this.container = new Container();
     this.container.visible = false;
-    this.getMoney = getMoney;
 
     const overlay = new Graphics();
     overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x090d1f, alpha: 0.66 });
+    overlay.fill({ color: 0x17151f, alpha: 0.72 });
     this.container.addChild(overlay);
 
-    const lightsTex = Assets.get("lights") as Texture;
-    if (lightsTex) {
-      const lights = new Sprite(lightsTex);
-      lights.anchor.set(0.5);
-      lights.x = GAME_WIDTH / 2;
-      lights.y = GAME_HEIGHT * 0.22;
-      lights.scale.set(1.42);
-      lights.alpha = 0.42;
-      this.container.addChild(lights);
-    }
+    const topCapsule = new Graphics();
+    topCapsule.roundRect(GAME_WIDTH / 2 - 88, 18, 176, 34, 17);
+    topCapsule.fill({ color: 0x101010, alpha: 0.95 });
+    this.container.addChild(topCapsule);
 
     const paypalCardTex = Assets.get("paypalCard") as Texture;
     if (paypalCardTex) {
       const card = new Sprite(paypalCardTex);
       card.anchor.set(0.5);
       card.x = GAME_WIDTH / 2;
-      card.y = GAME_HEIGHT * 0.47;
-      card.scale.set(0.33);
+      card.y = GAME_HEIGHT * 0.52;
+      card.scale.set(0.44);
       this.container.addChild(card);
     }
 
@@ -41,93 +34,78 @@ export class WinScreen {
       text: "Congratulations",
       style: new TextStyle({
         fontFamily: "PP Mori",
-        fontSize: 50,
+        fontSize: 52,
         fontWeight: "bold",
-        fill: 0xffdd00,
-        stroke: { color: 0x29174d, width: 5 },
+        fill: 0xffffff,
+        stroke: { color: 0x2f2f2f, width: 6 },
       }),
     });
     title.anchor.set(0.5);
     title.x = GAME_WIDTH / 2;
-    title.y = GAME_HEIGHT * 0.285;
+    title.y = GAME_HEIGHT * 0.26;
     this.container.addChild(title);
 
     const subtitle = new Text({
-      text: "Your PayPal reward is ready",
+      text: "Cash out in the app!",
       style: new TextStyle({
         fontFamily: "PP Mori",
-        fontSize: 28,
+        fontSize: 24,
+        fontWeight: "bold",
         fill: 0xffffff,
-        stroke: { color: 0x101939, width: 3 },
+        stroke: { color: 0x6b6b6b, width: 4 },
       }),
     });
     subtitle.anchor.set(0.5);
     subtitle.x = GAME_WIDTH / 2;
-    subtitle.y = GAME_HEIGHT * 0.345;
+    subtitle.y = GAME_HEIGHT * 0.315;
     this.container.addChild(subtitle);
 
-    const amountCard = new Container();
-    amountCard.x = GAME_WIDTH / 2;
-    amountCard.y = GAME_HEIGHT * 0.61;
-
-    const amountShadow = new Graphics();
-    amountShadow.roundRect(-162, -28, 324, 56, 18);
-    amountShadow.fill({ color: 0x000000, alpha: 0.18 });
-    amountCard.addChild(amountShadow);
-
-    const amountBg = new Graphics();
-    amountBg.roundRect(-160, -30, 320, 60, 18);
-    amountBg.fill({ color: 0xffffff });
-    amountBg.stroke({ color: 0x1d4fb0, width: 4 });
-    amountCard.addChild(amountBg);
-
-    const amountLogoTex = Assets.get("paypalCounter") as Texture;
-    if (amountLogoTex) {
-      const amountLogo = new Sprite(amountLogoTex);
-      amountLogo.anchor.set(0.5);
-      amountLogo.x = -90;
-      amountLogo.y = 0;
-      amountLogo.scale.set(0.42);
-      amountCard.addChild(amountLogo);
-    }
-
     this.rewardAmountText = new Text({
-      text: "$0",
+      text: `$${getMoney().toFixed(2)}`,
       style: new TextStyle({
         fontFamily: "PP Mori",
-        fontSize: 40,
+        fontSize: 46,
         fontWeight: "bold",
-        fill: 0xffffff,
-        stroke: { color: 0x143d8c, width: 4 },
+        fill: 0x111111,
+        stroke: { color: 0xffffff, width: 6 },
       }),
     });
-    this.rewardAmountText.anchor.set(0.5, 0.5);
-    this.rewardAmountText.x = 92;
-    this.rewardAmountText.y = 1;
-    amountCard.addChild(this.rewardAmountText);
-    this.container.addChild(amountCard);
+    this.rewardAmountText.anchor.set(0.5);
+    this.rewardAmountText.x = GAME_WIDTH / 2 + 98;
+    this.rewardAmountText.y = GAME_HEIGHT * 0.585;
+    this.container.addChild(this.rewardAmountText);
 
     const btnBg = new Graphics();
-    btnBg.roundRect(GAME_WIDTH / 2 - 132, GAME_HEIGHT * 0.765, 264, 62, 16);
-    btnBg.fill({ color: 0xff8800 });
+    btnBg.roundRect(GAME_WIDTH / 2 - 150, GAME_HEIGHT * 0.74, 300, 66, 14);
+    btnBg.fill({ color: 0xef3b39 });
+    btnBg.stroke({ color: 0x901d1b, width: 3 });
     this.container.addChild(btnBg);
 
-    const btnText = new Text({
-      text: "CLAIM",
+    this.buttonText = new Text({
+      text: "INSTALL AND EARN",
       style: new TextStyle({
         fontFamily: "PP Mori",
-        fontSize: 30,
+        fontSize: 24,
         fontWeight: "bold",
         fill: 0xffffff,
+        stroke: { color: 0x7f1214, width: 3 },
       }),
     });
-    btnText.anchor.set(0.5);
-    btnText.x = GAME_WIDTH / 2;
-    btnText.y = GAME_HEIGHT * 0.765 + 31;
-    this.container.addChild(btnText);
+    this.buttonText.anchor.set(0.5);
+    this.buttonText.x = GAME_WIDTH / 2;
+    this.buttonText.y = GAME_HEIGHT * 0.74 + 33;
+    this.container.addChild(this.buttonText);
   }
 
   show(money: number) {
-    this.rewardAmountText.text = `$${money}`;
+    this.rewardAmountText.text = `$${money.toFixed(2)}`;
+  }
+
+  getDebugMeta() {
+    return {
+      overlayVariant: "install",
+      hasSkyBurstOverlay: false,
+      primaryCtaLabel: this.buttonText.text,
+    };
   }
 }

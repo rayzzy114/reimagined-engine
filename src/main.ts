@@ -2,6 +2,17 @@ import { Application } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT } from "./utils/constants";
 import { Game } from "./Game";
 
+declare global {
+  interface Window {
+    __PLAYABLE_TEST_API__?: {
+      snapshot: () => ReturnType<Game["getDebugSnapshot"]>;
+      setState: (state: string) => void;
+      setMoney: (money: number) => void;
+      tap: () => void;
+    };
+  }
+}
+
 async function init() {
   const app = new Application();
 
@@ -32,6 +43,13 @@ async function init() {
 
   const game = new Game(app);
   await game.init();
+
+  window.__PLAYABLE_TEST_API__ = {
+    snapshot: () => game.getDebugSnapshot(),
+    setState: (state: string) => game.debugSetState(state as any),
+    setMoney: (money: number) => game.debugSetMoney(money),
+    tap: () => game.debugTap(),
+  };
 }
 
 init();
