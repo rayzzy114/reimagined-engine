@@ -110,20 +110,15 @@ export class Player {
   }
 
   getBounds() {
-    // Reference Hitbox: scale {X: 0.25, Y: 0.7}, offset {X: 0, Y: -0.15}
-    const anim = this.currentAnim;
-    const spriteW = anim.width;
-    const spriteH = anim.height;
-    
-    const w = spriteW * 0.25;
-    const h = spriteH * 0.7;
-    
-    // Offset is relative to center. Anchor is (0.5, 1).
-    // Sprite center Y is at container.y - spriteH/2.
-    const centerY = this.container.y - spriteH/2 + (-0.15 * spriteH);
-    
+    // Reference hitbox: scale {X: 0.25, Y: 0.7}, offset {X: 0, Y: -0.15}
+    const bounds = this.container.getBounds();
+    const w = bounds.width * 0.25;
+    const h = bounds.height * 0.7;
+    const centerX = bounds.x + bounds.width / 2;
+    const centerY = bounds.y + bounds.height / 2 + (-0.15 * bounds.height);
+
     return {
-      x: this.container.x - w / 2,
+      x: centerX - w / 2,
       y: centerY - h / 2,
       width: w,
       height: h,

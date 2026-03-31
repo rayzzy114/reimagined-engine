@@ -6,8 +6,12 @@ export class HUD {
   private heartSprites: Graphics[] = [];
   private moneyText: Text;
   private footerContainer: Container;
+  private muteButton: Container;
+  private muteWaves: Graphics;
+  private muteSlash: Graphics;
+  private muted = false;
 
-  constructor() {
+  constructor(onToggleMute: () => void, isMuted: () => boolean) {
     this.container = new Container();
 
     // Hearts (drawn as Graphics since we don't have a heart asset that's separate)
@@ -44,7 +48,7 @@ export class HUD {
     this.moneyText = new Text({
       text: "$0",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 26,
         fontWeight: "bold",
         fill: 0x103a8b,
@@ -57,6 +61,52 @@ export class HUD {
     moneyContainer.addChild(this.moneyText);
 
     this.container.addChild(moneyContainer);
+
+    this.muteButton = new Container();
+    this.muteButton.eventMode = "static";
+    this.muteButton.cursor = "pointer";
+    this.muteButton.x = GAME_WIDTH - 220;
+    this.muteButton.y = 34;
+
+    const muteBg = new Graphics();
+    muteBg.roundRect(-18, -18, 36, 36, 10);
+    muteBg.fill({ color: 0xffffff, alpha: 0.95 });
+    muteBg.stroke({ color: 0x2d66b3, width: 2 });
+    this.muteButton.addChild(muteBg);
+
+    const speaker = new Graphics();
+    speaker.moveTo(-8, -5);
+    speaker.lineTo(-2, -5);
+    speaker.lineTo(4, -10);
+    speaker.lineTo(4, 10);
+    speaker.lineTo(-2, 5);
+    speaker.lineTo(-8, 5);
+    speaker.closePath();
+    speaker.fill({ color: 0x2d66b3 });
+    this.muteButton.addChild(speaker);
+
+    this.muteWaves = new Graphics();
+    this.muteWaves.arc(6, 0, 5, -0.75, 0.75);
+    this.muteWaves.stroke({ color: 0x2d66b3, width: 2 });
+    this.muteWaves.arc(6, 0, 10, -0.75, 0.75);
+    this.muteWaves.stroke({ color: 0x2d66b3, width: 2 });
+    this.muteButton.addChild(this.muteWaves);
+
+    this.muteSlash = new Graphics();
+    this.muteSlash.moveTo(-9, 9);
+    this.muteSlash.lineTo(10, -10);
+    this.muteSlash.stroke({ color: 0xd13a3a, width: 3 });
+    this.muteSlash.visible = false;
+    this.muteButton.addChild(this.muteSlash);
+
+    this.muteButton.on("pointertap", (event) => {
+      event.stopPropagation();
+      onToggleMute();
+      this.setMuted(isMuted());
+    });
+
+    this.setMuted(isMuted());
+    this.container.addChild(this.muteButton);
 
     this.footerContainer = new Container();
     this.footerContainer.y = GAME_HEIGHT - 134;
@@ -102,5 +152,11 @@ export class HUD {
 
   updateMoney(amount: number) {
     this.moneyText.text = `$${amount}`;
+  }
+
+  setMuted(value: boolean) {
+    this.muted = value;
+    this.muteSlash.visible = value;
+    this.muteWaves.alpha = value ? 0.25 : 1;
   }
 }

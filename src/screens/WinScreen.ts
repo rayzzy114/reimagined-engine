@@ -40,7 +40,7 @@ export class WinScreen {
     const title = new Text({
       text: "Congratulations",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 50,
         fontWeight: "bold",
         fill: 0xffdd00,
@@ -55,7 +55,7 @@ export class WinScreen {
     const subtitle = new Text({
       text: "Your PayPal reward is ready",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 28,
         fill: 0xffffff,
         stroke: { color: 0x101939, width: 3 },
@@ -79,7 +79,7 @@ export class WinScreen {
     this.rewardText = new Text({
       text: "$0",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 42,
         fontWeight: "bold",
         fill: 0xffffff,
@@ -99,7 +99,7 @@ export class WinScreen {
     const btnText = new Text({
       text: "CLAIM",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 30,
         fontWeight: "bold",
         fill: 0xffffff,

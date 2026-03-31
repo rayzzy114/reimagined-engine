@@ -1,4 +1,4 @@
-import { Application, Container } from "pixi.js";
+import { Application, Container, Graphics } from "pixi.js";
 import { loadAssets } from "./utils/assets";
 import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, MAX_LIVES, INVINCIBILITY_DURATION, COLLECTIBLE_VALUE, PICKUP_RADIUS, LEVEL_DATA, EntityType, EntityFlag, PRAISE_PHRASES } from "./utils/constants";
 import { Background } from "./Background";
@@ -12,6 +12,7 @@ import { WinScreen } from "./screens/WinScreen";
 import { LoseScreen } from "./screens/LoseScreen";
 import { CTAScreen } from "./screens/CTAScreen";
 import { PraisePopup } from "./PraisePopup";
+import { SoundManager } from "./utils/sounds";
 
 export enum GameState {
   START = "start",
@@ -41,6 +42,9 @@ export class Game {
   private winScreen!: WinScreen;
   private loseScreen!: LoseScreen;
   private ctaScreen!: CTAScreen;
+  private sounds = new SoundManager();
+  private damageFlash!: Graphics;
+  private damageFlashTimer = 0;
 
   private lives = MAX_LIVES;
   private money = 0;
@@ -72,10 +76,22 @@ export class Game {
     this.finishRibbon = new FinishRibbon();
     this.gameContainer.addChild(this.finishRibbon.container);
 
+    this.damageFlash = new Graphics();
+    this.damageFlash.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    this.damageFlash.fill({ color: 0xff3344, alpha: 0 });
+    this.damageFlash.visible = false;
+    this.gameContainer.addChild(this.damageFlash);
+
     this.praisePopup = new PraisePopup();
     this.uiContainer.addChild(this.praisePopup.container);
 
-    this.hud = new HUD();
+    this.hud = new HUD(
+      () => {
+        const muted = this.sounds.toggleMute();
+        this.hud.setMuted(muted);
+      },
+      () => this.sounds.isMuted()
+    );
     this.uiContainer.addChild(this.hud.container);
 
     this.startScreen = new StartScreen(() => this.setState(GameState.PLAYING));
@@ -90,7 +106,7 @@ export class Game {
     );
     this.uiContainer.addChild(this.winScreen.container);
 
-    this.loseScreen = new LoseScreen(() => this.setState(GameState.CTA));
+    this.loseScreen = new LoseScreen(() => this.setState(GameState.CTA), () => this.money);
     this.uiContainer.addChild(this.loseScreen.container);
 
     this.ctaScreen = new CTAScreen();
@@ -115,26 +131,38 @@ export class Game {
     this.ctaScreen.container.visible = newState === GameState.CTA;
 
     if (newState === GameState.WIN) {
+      this.sounds.playWin();
       this.winScreen.show(this.money);
+    }
+    if (newState === GameState.LOSE) {
+      this.sounds.playLose();
+      this.loseScreen.play();
     }
   }
 
   private onTap() {
+    this.sounds.unlock();
     switch (this.state) {
       case GameState.START:
+        this.sounds.playClick();
         this.setState(GameState.PLAYING);
         break;
       case GameState.PLAYING:
+        this.sounds.playJump();
         this.player.jump();
         break;
       case GameState.TUTORIAL_PAUSE:
+        this.sounds.playClick();
         this.setState(GameState.PLAYING);
+        this.sounds.playJump();
         this.player.jump();
         break;
       case GameState.WIN:
+        this.sounds.playClick();
         this.setState(GameState.CTA);
         break;
       case GameState.LOSE:
+        this.sounds.playClick();
         this.setState(GameState.CTA);
         break;
     }
@@ -148,6 +176,11 @@ export class Game {
       return;
     }
 
+    if (this.state === GameState.LOSE) {
+      this.loseScreen.update(dt);
+      return;
+    }
+
     if (this.state !== GameState.PLAYING) return;
 
     this.background.update(dt);
@@ -155,6 +188,16 @@ export class Game {
     this.level.update(dt);
     this.updateFinishLine();
     this.finishRibbon.update(dt);
+
+    if (this.damageFlashTimer > 0) {
+      this.damageFlashTimer -= dt;
+      const alpha = Math.max(0, this.damageFlashTimer / 0.18) * 0.22;
+      this.damageFlash.visible = alpha > 0;
+      this.damageFlash.alpha = alpha;
+    } else {
+      this.damageFlash.visible = false;
+      this.damageFlash.alpha = 0;
+    }
 
     if (this.isInvincible) {
       this.invincibilityTimer -= dt * 1000;
@@ -186,19 +229,22 @@ export class Game {
   }
 
   private checkCollisions() {
-    const playerBounds = this.inflateBounds(this.player.getBounds(), 10);
+    const playerBounds = this.inflateBounds(this.player.getBounds(), 6);
+    const playerCenterX = playerBounds.x + playerBounds.width / 2;
+    const playerCenterY = playerBounds.y + playerBounds.height / 2;
 
     // Collectibles
     for (const collectible of this.level.getActiveCollectibles()) {
       if (!collectible.collected) {
-        const dx = playerBounds.x + playerBounds.width / 2 - collectible.x;
-        const dy = playerBounds.y + playerBounds.height / 2 - collectible.y;
+        const dx = playerCenterX - collectible.x;
+        const dy = playerCenterY - collectible.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < PICKUP_RADIUS) {
+        if (dist < PICKUP_RADIUS + 28) {
           collectible.collect();
           this.money += COLLECTIBLE_VALUE;
           this.collectCount++;
           this.hud.updateMoney(this.money);
+          this.sounds.playCollect();
 
           if (this.collectCount % 3 === 0) {
             const phrase = PRAISE_PHRASES[this.praiseIndex % PRAISE_PHRASES.length];
@@ -212,7 +258,8 @@ export class Game {
     // Enemies
     if (!this.isInvincible) {
       for (const enemy of this.level.getActiveEnemies()) {
-        if (!enemy.hit && this.intersects(playerBounds, enemy.getBounds())) {
+        const enemyBounds = this.shrinkBounds(enemy.getBounds(), 18);
+        if (!enemy.hit && this.intersects(playerBounds, enemyBounds)) {
           enemy.onHit();
           this.lives--;
           this.hud.updateLives(this.lives);
@@ -226,6 +273,8 @@ export class Game {
           this.invincibilityTimer = INVINCIBILITY_DURATION;
           this.player.setInvincible(true);
           this.player.playHurt();
+          this.sounds.playHit();
+          this.triggerDamageFlash();
           this.shakeScreen();
         }
       }
@@ -234,14 +283,8 @@ export class Game {
     // Obstacles
     if (!this.isInvincible) {
       for (const obstacle of this.level.getActiveObstacles()) {
-        const obsBounds = obstacle.getBounds();
-        const shrunk = {
-          x: obsBounds.x + 10,
-          y: obsBounds.y + 10,
-          width: obsBounds.width - 20,
-          height: obsBounds.height - 20,
-        };
-        if (this.intersects(playerBounds, shrunk)) {
+        const obstacleBounds = this.shrinkBounds(obstacle.getBounds(), 14);
+        if (this.intersects(playerBounds, obstacleBounds)) {
           this.lives--;
           this.hud.updateLives(this.lives);
 
@@ -254,6 +297,8 @@ export class Game {
           this.invincibilityTimer = INVINCIBILITY_DURATION;
           this.player.setInvincible(true);
           this.player.playHurt();
+          this.sounds.playHit();
+          this.triggerDamageFlash();
           this.shakeScreen();
           break;
         }
@@ -265,6 +310,12 @@ export class Game {
       this.finishRibbon.breakRibbon(playerBounds.y + playerBounds.height / 2);
       this.setState(GameState.WIN);
     }
+  }
+
+  private triggerDamageFlash() {
+    this.damageFlashTimer = 0.18;
+    this.damageFlash.visible = true;
+    this.damageFlash.alpha = 0.22;
   }
 
   private intersects(
@@ -288,6 +339,18 @@ export class Game {
       y: bounds.y - padding,
       width: bounds.width + padding * 2,
       height: bounds.height + padding * 2,
+    };
+  }
+
+  private shrinkBounds(
+    bounds: { x: number; y: number; width: number; height: number },
+    padding: number
+  ) {
+    return {
+      x: bounds.x + padding,
+      y: bounds.y + padding,
+      width: Math.max(0, bounds.width - padding * 2),
+      height: Math.max(0, bounds.height - padding * 2),
     };
   }
 

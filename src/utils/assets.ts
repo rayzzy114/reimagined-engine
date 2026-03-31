@@ -27,6 +27,7 @@ import footerPortraitUrl from "../../assets/footer_portrait.webp";
 import footerLandscapeUrl from "../../assets/footer_landscape.webp";
 import lightsUrl from "../../assets/lights_effect.png";
 import coinGlowUrl from "../../assets/coin_glow.webp";
+import ppMoriUrl from "../../assets/fonts/PPMori-Regular.otf";
 
 const assetMap: Record<string, string> = {
   runnerSheet: runnerSheetUrl,
@@ -63,6 +64,10 @@ export async function loadAssets(): Promise<void> {
     Assets.add({ alias, src });
   }
   await Assets.load(Object.keys(assetMap));
+
+  const ppMori = new FontFace("PP Mori", `url(${ppMoriUrl})`);
+  await ppMori.load();
+  document.fonts.add(ppMori);
 
   // Parse spritesheets
   const runnerTex = Assets.get("runnerSheet") as Texture;

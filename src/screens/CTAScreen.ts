@@ -36,7 +36,7 @@ export class CTAScreen {
     const title = new Text({
       text: "Install and earn",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 52,
         fontWeight: "bold",
         fill: 0xffdd00,
@@ -56,7 +56,7 @@ export class CTAScreen {
     const btnText = new Text({
       text: "INSTALL AND EARN",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 28,
         fontWeight: "bold",
         fill: 0xffffff,
@@ -70,7 +70,7 @@ export class CTAScreen {
     const note = new Text({
       text: "Cash out with Playoff",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 26,
         fontWeight: "bold",
         fill: 0xffffff,

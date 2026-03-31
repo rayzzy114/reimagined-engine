@@ -12,7 +12,7 @@ export class StartScreen {
     // Semi-transparent overlay
     const overlay = new Graphics();
     overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x040814, alpha: 0.42 });
+    overlay.fill({ color: 0x040814, alpha: 0.38 });
     this.container.addChild(overlay);
 
     const lightsTex = Assets.get("lights") as Texture;
@@ -20,17 +20,17 @@ export class StartScreen {
       const lights = new Sprite(lightsTex);
       lights.anchor.set(0.5);
       lights.x = GAME_WIDTH / 2;
-      lights.y = GAME_HEIGHT * 0.28;
-      lights.scale.set(1.45);
-      lights.alpha = 0.48;
+      lights.y = GAME_HEIGHT * 0.25;
+      lights.scale.set(1.35);
+      lights.alpha = 0.42;
       this.container.addChild(lights);
     }
 
     const title = new Text({
-      text: "Tap to start",
+      text: "Tap to start\nearning!",
       style: new TextStyle({
-        fontFamily: "Arial",
-        fontSize: 54,
+        fontFamily: "PP Mori",
+        fontSize: 46,
         fontWeight: "bold",
         fill: 0xffffff,
         stroke: { color: 0x1d2456, width: 5 },
@@ -45,17 +45,17 @@ export class StartScreen {
     });
     title.anchor.set(0.5);
     title.x = GAME_WIDTH / 2;
-    title.y = GAME_HEIGHT * 0.2;
+    title.y = GAME_HEIGHT * 0.43;
     this.container.addChild(title);
 
     const handTex = Assets.get("hand") as Texture;
     if (handTex) {
       this.handSprite = new Sprite(handTex);
       this.handSprite.anchor.set(0.5);
-      this.handSprite.x = GAME_WIDTH / 2;
-      this.handSprite.y = GAME_HEIGHT * 0.56;
-      this.handSprite.scale.set(0.27);
-      this.handSprite.angle = -12;
+      this.handSprite.x = GAME_WIDTH / 2 + 10;
+      this.handSprite.y = GAME_HEIGHT * 0.76;
+      this.handSprite.scale.set(0.13);
+      this.handSprite.angle = -10;
       this.container.addChild(this.handSprite);
     }
   }
@@ -63,9 +63,9 @@ export class StartScreen {
   update(dt: number) {
     if (this.handSprite) {
       this.pulseTimer += dt;
-      const scale = 0.27 + Math.sin(this.pulseTimer * 3.2) * 0.018;
+      const scale = 0.13 + Math.sin(this.pulseTimer * 3.2) * 0.01;
       this.handSprite.scale.set(scale);
-      this.handSprite.y = GAME_HEIGHT * 0.56 + Math.sin(this.pulseTimer * 3.2) * 10;
+      this.handSprite.y = GAME_HEIGHT * 0.76 + Math.sin(this.pulseTimer * 3.2) * 6;
     }
   }
 }

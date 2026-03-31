@@ -27,7 +27,7 @@ export class TutorialOverlay {
     const text = new Text({
       text: "Jump over the thief",
       style: new TextStyle({
-        fontFamily: "Arial",
+        fontFamily: "PP Mori",
         fontSize: 42,
         fontWeight: "bold",
         fill: 0xffffff,

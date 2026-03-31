@@ -1,10 +1,10 @@
-import { Container, Sprite, AnimatedSprite, Texture, Assets, Text, TextStyle } from "pixi.js";
+import { Container, Sprite, AnimatedSprite, Texture, Assets, Text, TextStyle, Graphics } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, LEVEL_DATA, EntityType, EntityFlag, ENEMY_CHASE_SPEED, PLAYER_X_RATIO, LevelItem, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
 import { thiefSpritesheet } from "./utils/assets";
 
 export interface ActiveEntity {
   sprite: Container; // Use Container to hold sprite + glow
-  mainSprite: Sprite | AnimatedSprite;
+  mainSprite: Sprite | AnimatedSprite | Graphics;
   glow?: Sprite;
   type: EntityType;
   x: number;
@@ -106,11 +106,14 @@ export class Level {
 
     switch (item.type) {
       case EntityType.COLLECTIBLE: {
-        const tex = Assets.get("dollar") as Texture;
+        const isPaypalBanner = this.shouldUsePaypalBanner(item);
+        const primaryTex = isPaypalBanner ? Assets.get("coin") as Texture : Assets.get("dollar") as Texture;
+        const fallbackTex = isPaypalBanner ? Assets.get("dollar") as Texture : Assets.get("coin") as Texture;
+        const tex = primaryTex || fallbackTex;
         if (!tex) return;
         mainSprite = new Sprite(tex);
         mainSprite.anchor.set(0.5, 0.5);
-        mainSprite.scale.set(0.15);
+        mainSprite.scale.set(isPaypalBanner ? 0.14 : 0.15);
         
         const glowTex = Assets.get("coinGlow") as Texture;
         if (glowTex) {
@@ -137,27 +140,21 @@ export class Level {
         break;
       }
       case EntityType.OBSTACLE: {
-        const bushTextures = ["bush1", "bush2", "bush3"];
-        const bushName = bushTextures[Math.floor(Math.random() * bushTextures.length)];
-        const tex = Assets.get(bushName) as Texture;
-        if (!tex) return;
-        mainSprite = new Sprite(tex);
-        mainSprite.anchor.set(0.5, 1);
-        mainSprite.scale.set(0.5);
+        const rockContainer = new Container();
+        const rock = new Graphics();
+        rock.ellipse(0, 0, 52, 34);
+        rock.fill({ color: 0x8c93a1 });
+        rock.stroke({ color: 0x616974, width: 4 });
+        rockContainer.addChild(rock);
 
-        const glowTex = Assets.get("coinGlow") as Texture;
-        if (glowTex) {
-          glow = new Sprite(glowTex);
-          glow.anchor.set(0.5);
-          glow.y = -mainSprite.height / 2;
-          glow.scale.set(0.8);
-          glow.alpha = 0.8;
-          glow.tint = 0xFF0000;
-          container.addChild(glow);
-        }
+        const highlight = new Graphics();
+        highlight.ellipse(-12, -8, 18, 10);
+        highlight.fill({ color: 0xc8cdd7, alpha: 0.55 });
+        rockContainer.addChild(highlight);
 
-        container.addChild(mainSprite);
-        y = this.groundY;
+        mainSprite = rock;
+        container.addChild(rockContainer);
+        y = this.groundY - 8;
         break;
       }
       default:
@@ -173,7 +170,7 @@ export class Level {
       warningLabel = new Text({
         text: "EVADE!",
         style: new TextStyle({
-          fontFamily: "Arial",
+          fontFamily: "PP Mori",
           fontSize: 28,
           fontWeight: "bold",
           fill: 0xff0000,
@@ -230,7 +227,7 @@ export class Level {
         const h = spriteH * 0.8;
         return {
           x: this.x - w / 2,
-          y: (this.type === EntityType.COLLECTIBLE ? this.y - h / 2 : this.y - h),
+          y: this.type === EntityType.COLLECTIBLE ? this.y - h / 2 : this.y - h,
           width: w,
           height: h,
         };
@@ -277,5 +274,11 @@ export class Level {
 
   getCurrentDistance(): number {
     return this.currentDistance;
+  }
+
+  private shouldUsePaypalBanner(item: LevelItem) {
+    if (item.type !== EntityType.COLLECTIBLE) return false;
+    if (item.yOffset === undefined) return false;
+    return Math.round(item.distance * 10) % 6 === 0;
   }
 }
