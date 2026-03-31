@@ -266,7 +266,8 @@ export class Game {
         this.hud.spawnRewardFly(
           this.resolveRewardFlyTexture(),
           collectibleBounds.x + collectibleBounds.width / 2,
-          collectibleBounds.y + collectibleBounds.height / 2
+          collectibleBounds.y + collectibleBounds.height / 2,
+          () => this.hud.triggerCounterPop()
         );
 
         if (this.collectCount % 3 === 0) {
@@ -353,6 +354,7 @@ export class Game {
       money: this.money,
       footerVisible: this.hud.isFooterVisible(),
       hud: this.hud.getDebugMeta(),
+      jackpot: this.level.getJackpotDebug(),
       nextWarning: this.level.getNextWarningDebug(),
       overlayVariant: screenMeta?.overlayVariant ?? null,
       hasSkyBurstOverlay: screenMeta?.hasSkyBurstOverlay ?? false,
@@ -378,7 +380,12 @@ export class Game {
   }
 
   debugSpawnRewardFly() {
-    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(), 220, 540);
+    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(), 220, 540, () => this.hud.triggerCounterPop());
+  }
+
+  debugSetDistance(distance: number) {
+    this.level.setCurrentDistance(distance);
+    this.level.update(0);
   }
 
   private applyDamage() {

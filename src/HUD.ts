@@ -7,6 +7,7 @@ interface FlyReward {
   control: Point;
   target: Point;
   progress: number;
+  onComplete?: () => void;
 }
 
 export class HUD {
@@ -14,6 +15,8 @@ export class HUD {
   private heartSprites: Graphics[] = [];
   private moneyText: Text;
   private moneyContainer: Container;
+  private counterShell: Container;
+  private counterPopHalo: Graphics;
   private footerContainer: Container;
   private muteButton: Container;
   private muteWaves: Graphics;
@@ -21,6 +24,8 @@ export class HUD {
   private muted = false;
   private rewardFlyLayer: Container;
   private rewardFlies: FlyReward[] = [];
+  private counterPopTimer = 0;
+  private counterPopDuration = 0.36;
 
   constructor(onToggleMute: () => void, isMuted: () => boolean) {
     this.container = new Container();
@@ -44,18 +49,25 @@ export class HUD {
     this.moneyContainer.x = GAME_WIDTH - 172;
     this.moneyContainer.y = 6;
 
+    this.counterPopHalo = new Graphics();
+    this.counterPopHalo.visible = false;
+    this.moneyContainer.addChild(this.counterPopHalo);
+
+    this.counterShell = new Container();
+    this.moneyContainer.addChild(this.counterShell);
+
     const counterTex = Assets.get("paypalCounter") as Texture;
     if (counterTex) {
       const counter = new Sprite(counterTex);
       counter.width = 165;
       counter.height = 112;
-      this.moneyContainer.addChild(counter);
+      this.counterShell.addChild(counter);
     } else {
       const paypalBg = new Graphics();
       paypalBg.roundRect(0, 0, 160, 50, 12);
       paypalBg.fill({ color: 0xffffff });
       paypalBg.stroke({ color: 0x0070ba, width: 2 });
-      this.moneyContainer.addChild(paypalBg);
+      this.counterShell.addChild(paypalBg);
     }
 
     this.moneyText = new Text({
@@ -71,7 +83,7 @@ export class HUD {
     this.moneyText.anchor.set(1, 0.5);
     this.moneyText.x = 152;
     this.moneyText.y = 21;
-    this.moneyContainer.addChild(this.moneyText);
+    this.counterShell.addChild(this.moneyText);
 
     this.container.addChild(this.moneyContainer);
 
@@ -187,14 +199,32 @@ export class HUD {
       reward.sprite.rotation += dt * 3.4;
 
       if (t >= 1) {
+        reward.onComplete?.();
         this.rewardFlyLayer.removeChild(reward.sprite);
         reward.sprite.destroy();
         this.rewardFlies.splice(index, 1);
       }
     }
+
+    if (this.counterPopTimer > 0) {
+      this.counterPopTimer = Math.max(0, this.counterPopTimer - dt);
+      const progress = 1 - this.counterPopTimer / this.counterPopDuration;
+      const pulse = Math.sin(progress * Math.PI);
+      const scale = 1 + pulse * 0.06;
+      this.counterShell.scale.set(scale);
+      this.counterPopHalo.visible = true;
+      this.counterPopHalo.clear();
+      this.counterPopHalo.roundRect(-10, -8, 184, 128, 18);
+      this.counterPopHalo.fill({ color: 0xfff1b0, alpha: 0.34 * pulse });
+      this.counterPopHalo.stroke({ color: 0xffd05a, width: 3, alpha: 0.8 * pulse });
+    } else {
+      this.counterShell.scale.set(1);
+      this.counterPopHalo.visible = false;
+      this.counterPopHalo.clear();
+    }
   }
 
-  spawnRewardFly(texture: Texture, startX: number, startY: number) {
+  spawnRewardFly(texture: Texture, startX: number, startY: number, onComplete?: () => void) {
     const sprite = new Sprite(texture);
     sprite.anchor.set(0.5);
     sprite.x = startX;
@@ -214,6 +244,7 @@ export class HUD {
       control,
       target,
       progress: 0,
+      onComplete,
     });
   }
 
@@ -231,6 +262,10 @@ export class HUD {
     this.muteWaves.alpha = value ? 0.25 : 1;
   }
 
+  triggerCounterPop() {
+    this.counterPopTimer = this.counterPopDuration;
+  }
+
   private getCounterTarget() {
     return new Point(this.moneyContainer.x + 118, this.moneyContainer.y + 42);
   }
@@ -242,6 +277,8 @@ export class HUD {
       muteCenterY: this.muteButton.y,
       counterCenterY: this.moneyContainer.y + 28,
       flyCount: this.rewardFlies.length,
+      counterPopActive: this.counterPopTimer > 0,
+      counterPopScale: this.counterShell.scale.x,
     };
   }
 }

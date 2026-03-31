@@ -29,6 +29,7 @@ export class Level {
   private finishReached = false;
   private groundY: number;
   private tutorialTriggered = false;
+  private jackpotTotalCount = LEVEL_DATA.filter((item) => item.flags?.includes(EntityFlag.JACKPOT)).length;
 
   constructor(gameContainer: Container) {
     this.gameContainer = gameContainer;
@@ -94,6 +95,10 @@ export class Level {
     }
   }
 
+  setCurrentDistance(distance: number) {
+    this.currentDistance = Math.max(0, distance);
+  }
+
   private spawnEntity(item: LevelItem) {
     if (item.type === EntityType.FINISH) return;
 
@@ -107,25 +112,26 @@ export class Level {
 
     switch (item.type) {
       case EntityType.COLLECTIBLE: {
-        const isPaypalBanner = this.shouldUsePaypalBanner(item);
+        const isJackpotPickup = item.flags?.includes(EntityFlag.JACKPOT) ?? false;
+        const isPaypalBanner = isJackpotPickup || this.shouldUsePaypalBanner(item);
         const primaryTex = isPaypalBanner ? Assets.get("paypalCounter") as Texture : Assets.get("dollar") as Texture;
         const fallbackTex = isPaypalBanner ? Assets.get("paypalCard") as Texture : Assets.get("coin") as Texture;
         const tex = primaryTex || fallbackTex;
         if (!tex) return;
         mainSprite = new Sprite(tex);
         mainSprite.anchor.set(0.5, 0.5);
-        mainSprite.scale.set(isPaypalBanner ? 0.2 : 0.15);
+        mainSprite.scale.set(isJackpotPickup ? 0.24 : isPaypalBanner ? 0.2 : 0.15);
 
         glow = new Sprite(Texture.WHITE);
         glow.anchor.set(0.5);
-        glow.width = isPaypalBanner ? 92 : 58;
-        glow.height = isPaypalBanner ? 42 : 24;
-        glow.alpha = 0.12;
+        glow.width = isJackpotPickup ? 116 : isPaypalBanner ? 92 : 58;
+        glow.height = isJackpotPickup ? 56 : isPaypalBanner ? 42 : 24;
+        glow.alpha = isJackpotPickup ? 0.2 : 0.12;
         glow.tint = 0xffd86b;
         container.addChild(glow);
         
         container.addChild(mainSprite);
-        y = this.groundY - yOffset - (isPaypalBanner ? 56 : 40);
+        y = this.groundY - yOffset - (isJackpotPickup ? 66 : isPaypalBanner ? 56 : 40);
         break;
       }
       case EntityType.ENEMY: {
@@ -183,7 +189,7 @@ export class Level {
       hit: false,
       flags: item.flags ? [...item.flags] : undefined,
       warningLabel,
-      kind: item.type === EntityType.OBSTACLE ? "cone" : undefined,
+      kind: item.flags?.includes(EntityFlag.JACKPOT) ? "jackpot_paypal" : item.type === EntityType.OBSTACLE ? "cone" : undefined,
 
       collect() {
         this.collected = true;
@@ -316,6 +322,22 @@ export class Level {
       obstacleKind: "cone",
       label: "EVADE!",
       x: upcomingWarning.distance * GAME_WIDTH,
+    };
+  }
+
+  getJackpotDebug() {
+    const totalCount = this.jackpotTotalCount;
+    const activeCount = this.entities.filter(
+      (entity) => entity.active && entity.type === EntityType.COLLECTIBLE && entity.flags?.includes(EntityFlag.JACKPOT)
+    ).length;
+
+    const firstUpcoming = LEVEL_DATA.find((item) => item.flags?.includes(EntityFlag.JACKPOT));
+
+    return {
+      totalCount,
+      activeCount,
+      upcomingCount: Math.max(0, totalCount - activeCount),
+      firstDistance: firstUpcoming?.distance ?? null,
     };
   }
 

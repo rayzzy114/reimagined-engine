@@ -8,6 +8,7 @@ declare global {
       snapshot: () => ReturnType<Game["getDebugSnapshot"]>;
       setState: (state: string) => void;
       setMoney: (money: number) => void;
+      setDistance: (distance: number) => void;
       tap: () => void;
       obstacleHit: () => void;
       spawnRewardFly: () => void;
@@ -50,6 +51,7 @@ async function init() {
     snapshot: () => game.getDebugSnapshot(),
     setState: (state: string) => game.debugSetState(state as any),
     setMoney: (money: number) => game.debugSetMoney(money),
+    setDistance: (distance: number) => game.debugSetDistance(distance),
     tap: () => game.debugTap(),
     obstacleHit: () => game.debugObstacleHit(),
     spawnRewardFly: () => game.debugSpawnRewardFly(),

@@ -28,6 +28,7 @@ export enum EntityType {
 export enum EntityFlag {
   TUTORIAL_PAUSE = "tutorial_pause",
   SHOW_WARNING = "show_warning",
+  JACKPOT = "jackpot",
 }
 
 export interface LevelItem {
@@ -77,6 +78,10 @@ export const LEVEL_DATA: LevelItem[] = [
   { type: EntityType.COLLECTIBLE, distance: 16, yOffset: 180 },
   { type: EntityType.COLLECTIBLE, distance: 16.2, yOffset: 80 },
   { type: EntityType.OBSTACLE, distance: 16.5 },
+  { type: EntityType.COLLECTIBLE, distance: 16.8, yOffset: 120, flags: [EntityFlag.JACKPOT] },
+  { type: EntityType.COLLECTIBLE, distance: 16.92, yOffset: 60, flags: [EntityFlag.JACKPOT] },
+  { type: EntityType.COLLECTIBLE, distance: 17.04, yOffset: 150, flags: [EntityFlag.JACKPOT] },
+  { type: EntityType.COLLECTIBLE, distance: 17.16, yOffset: 90, flags: [EntityFlag.JACKPOT] },
   { type: EntityType.FINISH, distance: 18 },
 ];
 
