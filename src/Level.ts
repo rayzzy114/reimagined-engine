@@ -223,6 +223,17 @@ export class Level {
             height: h,
           };
         }
+
+        if (this.type === EntityType.OBSTACLE) {
+          const w = spriteW * 0.92;
+          const h = spriteH * 0.72;
+          return {
+            x: this.x - w / 2,
+            y: this.y - h + 12,
+            width: w,
+            height: h,
+          };
+        }
         
         const w = spriteW * 0.7;
         const h = spriteH * 0.8;

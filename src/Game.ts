@@ -275,21 +275,9 @@ export class Game {
         const enemyBounds = shrinkBounds(enemy.getBounds(), 18);
         if (!enemy.hit && intersects(playerBounds, enemyBounds)) {
           enemy.onHit();
-          this.lives--;
-          this.hud.updateLives(this.lives);
-
-          if (this.lives <= 0) {
-            this.setState(GameState.LOSE);
+          if (this.applyDamage()) {
             return;
           }
-
-          this.isInvincible = true;
-          this.invincibilityTimer = INVINCIBILITY_DURATION;
-          this.player.setInvincible(true);
-          this.player.playHurt();
-          this.sounds.playHit();
-          this.triggerDamageFlash();
-          this.shakeScreen();
         }
       }
     }
@@ -297,23 +285,11 @@ export class Game {
     // Obstacles
     if (!this.isInvincible) {
       for (const obstacle of this.level.getActiveObstacles()) {
-        const obstacleBounds = shrinkBounds(obstacle.getBounds(), 14);
+        const obstacleBounds = obstacle.getBounds();
         if (intersects(playerBounds, obstacleBounds)) {
-          this.lives--;
-          this.hud.updateLives(this.lives);
-
-          if (this.lives <= 0) {
-            this.setState(GameState.LOSE);
+          if (this.applyDamage()) {
             return;
           }
-
-          this.isInvincible = true;
-          this.invincibilityTimer = INVINCIBILITY_DURATION;
-          this.player.setInvincible(true);
-          this.player.playHurt();
-          this.sounds.playHit();
-          this.triggerDamageFlash();
-          this.shakeScreen();
           break;
         }
       }
@@ -364,6 +340,7 @@ export class Game {
       lives: this.lives,
       money: this.money,
       footerVisible: this.hud.isFooterVisible(),
+      hud: this.hud.getDebugMeta(),
       nextWarning: this.level.getNextWarningDebug(),
       overlayVariant: screenMeta?.overlayVariant ?? null,
       hasSkyBurstOverlay: screenMeta?.hasSkyBurstOverlay ?? false,
@@ -382,5 +359,28 @@ export class Game {
 
   debugTap() {
     this.onTap();
+  }
+
+  debugObstacleHit() {
+    this.applyDamage();
+  }
+
+  private applyDamage() {
+    this.lives--;
+    this.hud.updateLives(this.lives);
+
+    if (this.lives <= 0) {
+      this.setState(GameState.LOSE);
+      return true;
+    }
+
+    this.isInvincible = true;
+    this.invincibilityTimer = INVINCIBILITY_DURATION;
+    this.player.setInvincible(true);
+    this.player.playHurt();
+    this.sounds.playHit();
+    this.triggerDamageFlash();
+    this.shakeScreen();
+    return false;
   }
 }

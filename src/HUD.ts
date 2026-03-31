@@ -5,6 +5,7 @@ export class HUD {
   container: Container;
   private heartSprites: Graphics[] = [];
   private moneyText: Text;
+  private moneyContainer: Container;
   private footerContainer: Container;
   private muteButton: Container;
   private muteWaves: Graphics;
@@ -27,22 +28,22 @@ export class HUD {
     }
     this.container.addChild(heartContainer);
 
-    const moneyContainer = new Container();
-    moneyContainer.x = GAME_WIDTH - 172;
-    moneyContainer.y = 6;
+    this.moneyContainer = new Container();
+    this.moneyContainer.x = GAME_WIDTH - 172;
+    this.moneyContainer.y = 6;
 
     const counterTex = Assets.get("paypalCounter") as Texture;
     if (counterTex) {
       const counter = new Sprite(counterTex);
       counter.width = 165;
       counter.height = 112;
-      moneyContainer.addChild(counter);
+      this.moneyContainer.addChild(counter);
     } else {
       const paypalBg = new Graphics();
       paypalBg.roundRect(0, 0, 160, 50, 12);
       paypalBg.fill({ color: 0xffffff });
       paypalBg.stroke({ color: 0x0070ba, width: 2 });
-      moneyContainer.addChild(paypalBg);
+      this.moneyContainer.addChild(paypalBg);
     }
 
     this.moneyText = new Text({
@@ -58,15 +59,15 @@ export class HUD {
     this.moneyText.anchor.set(1, 0.5);
     this.moneyText.x = 152;
     this.moneyText.y = 21;
-    moneyContainer.addChild(this.moneyText);
+    this.moneyContainer.addChild(this.moneyText);
 
-    this.container.addChild(moneyContainer);
+    this.container.addChild(this.moneyContainer);
 
     this.muteButton = new Container();
     this.muteButton.eventMode = "static";
     this.muteButton.cursor = "pointer";
     this.muteButton.x = GAME_WIDTH - 220;
-    this.muteButton.y = 22;
+    this.muteButton.y = 24;
 
     const muteBg = new Graphics();
     muteBg.roundRect(-18, -18, 36, 36, 10);
@@ -166,5 +167,14 @@ export class HUD {
     this.muted = value;
     this.muteSlash.visible = value;
     this.muteWaves.alpha = value ? 0.25 : 1;
+  }
+
+  getDebugMeta() {
+    return {
+      counterTop: this.moneyContainer.y,
+      muteTop: this.muteButton.y - 18,
+      muteCenterY: this.muteButton.y,
+      counterCenterY: this.moneyContainer.y + 28,
+    };
   }
 }

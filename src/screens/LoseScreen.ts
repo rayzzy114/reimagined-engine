@@ -40,13 +40,13 @@ export class LoseScreen {
     this.panel.alpha = 0;
     this.container.addChild(this.panel);
 
-    const paypalCardTex = Assets.get("paypalCard") as Texture;
+    const paypalCardTex = (Assets.get("paypalCounter") as Texture) || (Assets.get("paypalCard") as Texture);
     if (paypalCardTex) {
       const logo = new Sprite(paypalCardTex);
       logo.anchor.set(0.5);
       logo.x = GAME_WIDTH / 2;
       logo.y = GAME_HEIGHT * 0.52;
-      logo.scale.set(0.44);
+      logo.scale.set(0.46);
       this.panel.addChild(logo);
     }
 

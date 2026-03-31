@@ -9,6 +9,7 @@ declare global {
       setState: (state: string) => void;
       setMoney: (money: number) => void;
       tap: () => void;
+      obstacleHit: () => void;
     };
   }
 }
@@ -49,6 +50,7 @@ async function init() {
     setState: (state: string) => game.debugSetState(state as any),
     setMoney: (money: number) => game.debugSetMoney(money),
     tap: () => game.debugTap(),
+    obstacleHit: () => game.debugObstacleHit(),
   };
 }
 

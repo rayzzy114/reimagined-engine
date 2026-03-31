@@ -41,6 +41,31 @@ test("warning obstacle is represented as a cone and warning text is emitted", as
     });
 });
 
+test("obstacle hit flow removes one life", async ({ page }) => {
+  await page.goto(playableUrl);
+  await page.waitForSelector("canvas");
+  await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
+
+  await page.evaluate(() => {
+    window.__PLAYABLE_TEST_API__?.setState("playing");
+    window.__PLAYABLE_TEST_API__?.obstacleHit();
+  });
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().lives))
+    .toBe(2);
+});
+
+test("top hud keeps the sound button aligned with the paypal counter", async ({ page }) => {
+  await page.goto(playableUrl);
+  await page.waitForSelector("canvas");
+  await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
+
+  const snapshot = await page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot());
+  expect(Math.abs(snapshot.hud.muteTop - snapshot.hud.counterTop)).toBeLessThanOrEqual(2);
+  expect(Math.abs(snapshot.hud.muteCenterY - snapshot.hud.counterCenterY)).toBeLessThanOrEqual(12);
+});
+
 test("win state uses the payoff overlay style without the sky burst", async ({ page }) => {
   await page.goto(playableUrl);
   await page.waitForSelector("canvas");

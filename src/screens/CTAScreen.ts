@@ -51,13 +51,13 @@ export class CTAScreen {
     subtitle.y = GAME_HEIGHT * 0.315;
     this.container.addChild(subtitle);
 
-    const paypalCardTex = Assets.get("paypalCard") as Texture;
+    const paypalCardTex = (Assets.get("paypalCounter") as Texture) || (Assets.get("paypalCard") as Texture);
     if (paypalCardTex) {
       const card = new Sprite(paypalCardTex);
       card.anchor.set(0.5);
       card.x = GAME_WIDTH / 2;
       card.y = GAME_HEIGHT * 0.52;
-      card.scale.set(0.44);
+      card.scale.set(0.46);
       this.container.addChild(card);
     }
 
