@@ -1,8 +1,9 @@
 import { Container, Point, Sprite, Text, TextStyle, Texture, Assets, Graphics } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, MAX_LIVES } from "./utils/constants";
+import { createPaypalBadge } from "./utils/paypalBadge";
 
 interface FlyReward {
-  sprite: Sprite;
+  sprite: Container;
   start: Point;
   control: Point;
   target: Point;
@@ -197,9 +198,11 @@ export class HUD {
         invT * invT * reward.start.y +
         2 * invT * t * reward.control.y +
         t * t * reward.target.y;
-      reward.sprite.scale.set(0.18 - t * 0.08);
+      const startScale = reward.variant === "paypal" ? 1 : 0.18;
+      const endScale = reward.variant === "paypal" ? 0.78 : 0.1;
+      reward.sprite.scale.set(startScale - t * (startScale - endScale));
       reward.sprite.alpha = 1 - t * 0.15;
-      reward.sprite.rotation += dt * 3.4;
+      reward.sprite.rotation += reward.variant === "paypal" ? dt * 0.6 : dt * 3.4;
 
       if (t >= 1) {
         reward.onComplete?.();
@@ -234,11 +237,16 @@ export class HUD {
     variant: "cash" | "paypal",
     onComplete?: () => void
   ) {
-    const sprite = new Sprite(texture);
-    sprite.anchor.set(0.5);
+    const sprite =
+      variant === "paypal"
+        ? createPaypalBadge(92, 58, 13)
+        : new Sprite(texture);
+    if (sprite instanceof Sprite) {
+      sprite.anchor.set(0.5);
+    }
     sprite.x = startX;
     sprite.y = startY;
-    sprite.scale.set(variant === "paypal" ? 0.2 : 0.18);
+    sprite.scale.set(variant === "paypal" ? 1 : 0.18);
 
     const target = this.getCounterTarget();
     const control = new Point(

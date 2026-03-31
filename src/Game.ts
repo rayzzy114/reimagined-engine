@@ -295,10 +295,10 @@ export class Game {
         this.hud.updateMoney(this.money);
         this.sounds.playCollect();
         this.hud.spawnRewardFly(
-          this.resolveRewardFlyTexture(collectible.kind === "jackpot_paypal"),
+          this.resolveRewardFlyTexture(false),
           collectibleBounds.x + collectibleBounds.width / 2,
           collectibleBounds.y + collectibleBounds.height / 2,
-          collectible.kind === "jackpot_paypal" ? "paypal" : "cash",
+          "cash",
           () => this.hud.triggerCounterPop()
         );
 
@@ -441,6 +441,7 @@ export class Game {
       screenIntroActive: screenMeta?.introActive ?? false,
       screenContentScale: screenMeta?.contentScale ?? 1,
       screenAccentGlowStrength: screenMeta?.accentGlowStrength ?? 0,
+      countdownLabel: screenMeta?.countdownLabel ?? null,
     };
   }
 

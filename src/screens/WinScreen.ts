@@ -133,13 +133,14 @@ export class WinScreen {
     this.glowStrength = 0.12 + pulse * 0.12;
     this.heroGlow.clear();
     this.heroGlow.roundRect(
-      GAME_WIDTH / 2 - (156 + pulse * 8),
-      this.cardCenterY - (90 + pulse * 6),
-      312 + pulse * 16,
-      180 + pulse * 12,
-      38
+      GAME_WIDTH / 2 - (126 + pulse * 4),
+      this.cardCenterY - (82 + pulse * 4),
+      252 + pulse * 8,
+      164 + pulse * 8,
+      30
     );
     this.heroGlow.fill({ color: 0xffd86b, alpha: this.glowStrength });
+    this.heroGlow.stroke({ color: 0xfff0b9, width: 4, alpha: 0.4 + pulse * 0.12 });
   }
 
   getDebugMeta() {

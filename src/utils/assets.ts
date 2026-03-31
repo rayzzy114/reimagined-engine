@@ -21,7 +21,6 @@ import finishTapeRightUrl from "../../assets/finish_tape_right.png";
 import finishTapeTopUrl from "../../assets/finish_tape_top.png";
 import handUrl from "../../assets/hand.webp";
 import paypalCounterUrl from "../../assets/paypal_counter.webp";
-import paypalCardUrl from "../../assets/paypal_card.webp";
 import failImageUrl from "../../assets/fail_image.png";
 import footerPortraitUrl from "../../assets/footer_portrait.webp";
 import footerLandscapeUrl from "../../assets/footer_landscape.webp";
@@ -48,7 +47,7 @@ const assetMap: Record<string, string> = {
   finishTapeTop: finishTapeTopUrl,
   hand: handUrl,
   paypalCounter: paypalCounterUrl,
-  paypalCard: paypalCardUrl,
+  paypalCard: paypalCounterUrl,
   failImage: failImageUrl,
   footerPortrait: footerPortraitUrl,
   footerLandscape: footerLandscapeUrl,

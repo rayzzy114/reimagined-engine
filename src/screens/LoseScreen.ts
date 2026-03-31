@@ -7,6 +7,7 @@ export class LoseScreen {
   private failSprite: Sprite | null = null;
   private panel: Container;
   private amountText: Text;
+  private countdownText: Text;
   private buttonText: Text;
   private timer = 0;
 
@@ -95,7 +96,7 @@ export class LoseScreen {
     subtitle.y = GAME_HEIGHT * 0.315;
     this.panel.addChild(subtitle);
 
-    const countdown = new Text({
+    this.countdownText = new Text({
       text: "00:56",
       style: new TextStyle({
         fontFamily: "PP Mori",
@@ -104,10 +105,10 @@ export class LoseScreen {
         fill: 0xffffff,
       }),
     });
-    countdown.anchor.set(0.5);
-    countdown.x = GAME_WIDTH / 2;
-    countdown.y = GAME_HEIGHT * 0.67;
-    this.panel.addChild(countdown);
+    this.countdownText.anchor.set(0.5);
+    this.countdownText.x = GAME_WIDTH / 2;
+    this.countdownText.y = GAME_HEIGHT * 0.67;
+    this.panel.addChild(this.countdownText);
 
     const payment = new Text({
       text: "Next payment in one minute",
@@ -156,6 +157,7 @@ export class LoseScreen {
       this.failSprite.scale.set(0);
       this.failSprite.rotation = 0;
     }
+    this.countdownText.text = "00:56";
     this.amountText.text = `$${this.getMoney().toFixed(2)}`;
   }
 
@@ -175,6 +177,9 @@ export class LoseScreen {
       this.panel.alpha = fade;
       if (this.failSprite) this.failSprite.alpha = 1 - fade;
     }
+
+    const secondsLeft = Math.max(0, 56 - Math.floor(this.timer));
+    this.countdownText.text = `00:${String(secondsLeft).padStart(2, "0")}`;
   }
 
   getDebugMeta() {
@@ -182,6 +187,7 @@ export class LoseScreen {
       overlayVariant: "install",
       hasSkyBurstOverlay: false,
       primaryCtaLabel: this.buttonText.text,
+      countdownLabel: this.countdownText.text,
     };
   }
 }

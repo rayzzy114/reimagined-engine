@@ -118,13 +118,14 @@ export class CTAScreen {
     this.glowStrength = 0.16 + pulse * 0.12;
     this.heroGlow.clear();
     this.heroGlow.roundRect(
-      GAME_WIDTH / 2 - (154 + pulse * 8),
-      this.cardCenterY - (88 + pulse * 6),
-      308 + pulse * 16,
-      176 + pulse * 12,
-      36
+      GAME_WIDTH / 2 - (124 + pulse * 4),
+      this.cardCenterY - (80 + pulse * 4),
+      248 + pulse * 8,
+      160 + pulse * 8,
+      28
     );
     this.heroGlow.fill({ color: 0xffc15f, alpha: this.glowStrength });
+    this.heroGlow.stroke({ color: 0xffecb0, width: 4, alpha: 0.42 + pulse * 0.12 });
   }
 
   show() {

@@ -224,6 +224,11 @@ test("lose state uses the install-and-earn layout", async ({ page }) => {
       primaryCtaLabel: "INSTALL AND EARN",
       money: 201,
     });
+
+  await page.waitForTimeout(2100);
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().countdownLabel))
+    .not.toBe("00:56");
 });
 
 test("cta state keeps the install layout and CTA label", async ({ page }) => {
