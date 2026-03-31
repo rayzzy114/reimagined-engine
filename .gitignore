@@ -3,3 +3,8 @@ dist/
 .worktrees/
 .DS_Store
 *.log
+.claude/
+.firecrawl/
+test-results/
+tests/
+playwright.config.ts

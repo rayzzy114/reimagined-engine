@@ -116,29 +116,46 @@ export class Level {
       case EntityType.COLLECTIBLE: {
         const isJackpotPickup = item.flags?.includes(EntityFlag.JACKPOT) ?? false;
         const useDollar = isJackpotPickup || Math.round(item.distance * 10) % 4 < 2;
-        const primaryTex = useDollar
-          ? (Assets.get("dollar") as Texture)
-          : (Assets.get("coin") as Texture);
-        const fallbackTex = useDollar
-          ? (Assets.get("coin") as Texture)
-          : (Assets.get("dollar") as Texture);
-        const tex = primaryTex || fallbackTex;
-        if (!tex) return;
-        mainSprite = new Sprite(tex);
-        mainSprite.anchor.set(0.5, 0.5);
-        mainSprite.scale.set(isJackpotPickup ? 0.24 : useDollar ? 0.16 : 0.17);
 
-        glow = new Sprite(Texture.WHITE);
-        glow.anchor.set(0.5);
-        glow.width = isJackpotPickup ? 98 : useDollar ? 66 : 58;
-        glow.height = isJackpotPickup ? 40 : useDollar ? 28 : 24;
-        glow.alpha = isJackpotPickup ? 0.2 : 0.12;
-        glow.tint = 0xffd86b;
-        container.addChild(glow);
-        
-        container.addChild(mainSprite);
-        y = this.groundY - yOffset - (isJackpotPickup ? 82 : useDollar ? 62 : 58);
-        kind = isJackpotPickup ? "jackpot_cash" : useDollar ? "cash_dollar" : "cash_coin";
+        if (useDollar) {
+          const tex = (Assets.get("dollar") as Texture) || (Assets.get("coin") as Texture);
+          if (!tex) return;
+          mainSprite = new Sprite(tex);
+          mainSprite.anchor.set(0.5, 0.5);
+          mainSprite.scale.set(isJackpotPickup ? 0.24 : 0.16);
+
+          glow = new Sprite(Texture.WHITE);
+          glow.anchor.set(0.5);
+          glow.width = isJackpotPickup ? 98 : 66;
+          glow.height = isJackpotPickup ? 40 : 28;
+          glow.alpha = isJackpotPickup ? 0.2 : 0.12;
+          glow.tint = 0xffd86b;
+          container.addChild(glow);
+
+          container.addChild(mainSprite);
+          y = this.groundY - yOffset - (isJackpotPickup ? 82 : 62);
+          kind = isJackpotPickup ? "jackpot_cash" : "cash_dollar";
+        } else {
+          // PayPal badge collectible
+          const ppTex = (Assets.get("paypalCounter") as Texture) || (Assets.get("paypalCard") as Texture);
+          if (!ppTex) return;
+          mainSprite = new Sprite(ppTex);
+          mainSprite.anchor.set(0.5, 0.5);
+          mainSprite.width = 120;
+          mainSprite.height = 80;
+
+          glow = new Sprite(Texture.WHITE);
+          glow.anchor.set(0.5);
+          glow.width = 130;
+          glow.height = 90;
+          glow.alpha = 0.15;
+          glow.tint = 0xffd86b;
+          container.addChild(glow);
+
+          container.addChild(mainSprite);
+          y = this.groundY - yOffset - 72;
+          kind = "paypal_badge";
+        }
         break;
       }
       case EntityType.ENEMY: {

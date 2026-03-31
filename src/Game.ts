@@ -517,7 +517,6 @@ export class Game {
         (Assets.get("coin") as Texture)
       );
     }
-
     return (
       (Assets.get("dollar") as Texture) ||
       (Assets.get("coin") as Texture) ||
