@@ -1,5 +1,13 @@
-import { Container, Sprite, Text, TextStyle, Texture, Assets, Graphics } from "pixi.js";
+import { Container, Point, Sprite, Text, TextStyle, Texture, Assets, Graphics } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, MAX_LIVES } from "./utils/constants";
+
+interface FlyReward {
+  sprite: Sprite;
+  start: Point;
+  control: Point;
+  target: Point;
+  progress: number;
+}
 
 export class HUD {
   container: Container;
@@ -11,9 +19,13 @@ export class HUD {
   private muteWaves: Graphics;
   private muteSlash: Graphics;
   private muted = false;
+  private rewardFlyLayer: Container;
+  private rewardFlies: FlyReward[] = [];
 
   constructor(onToggleMute: () => void, isMuted: () => boolean) {
     this.container = new Container();
+    this.rewardFlyLayer = new Container();
+    this.container.addChild(this.rewardFlyLayer);
 
     // Hearts (drawn as Graphics since we don't have a heart asset that's separate)
     const heartContainer = new Container();
@@ -76,20 +88,20 @@ export class HUD {
     this.muteButton.addChild(muteBg);
 
     const speaker = new Graphics();
-    speaker.moveTo(-8, -5);
-    speaker.lineTo(-2, -5);
-    speaker.lineTo(4, -10);
-    speaker.lineTo(4, 10);
-    speaker.lineTo(-2, 5);
-    speaker.lineTo(-8, 5);
+    speaker.moveTo(-9, -4);
+    speaker.lineTo(-4, -4);
+    speaker.lineTo(1, -8);
+    speaker.lineTo(1, 8);
+    speaker.lineTo(-4, 4);
+    speaker.lineTo(-9, 4);
     speaker.closePath();
     speaker.fill({ color: 0x2d66b3 });
     this.muteButton.addChild(speaker);
 
     this.muteWaves = new Graphics();
-    this.muteWaves.arc(6, 0, 5, -0.75, 0.75);
+    this.muteWaves.arc(4, 0, 4, -0.75, 0.75);
     this.muteWaves.stroke({ color: 0x2d66b3, width: 2 });
-    this.muteWaves.arc(6, 0, 10, -0.75, 0.75);
+    this.muteWaves.arc(4, 0, 7, -0.75, 0.75);
     this.muteWaves.stroke({ color: 0x2d66b3, width: 2 });
     this.muteButton.addChild(this.muteWaves);
 
@@ -155,6 +167,56 @@ export class HUD {
     this.moneyText.text = `$${amount}`;
   }
 
+  update(dt: number) {
+    for (let index = this.rewardFlies.length - 1; index >= 0; index--) {
+      const reward = this.rewardFlies[index];
+      reward.progress = Math.min(1, reward.progress + dt * 2.8);
+
+      const t = reward.progress;
+      const invT = 1 - t;
+      reward.sprite.x =
+        invT * invT * reward.start.x +
+        2 * invT * t * reward.control.x +
+        t * t * reward.target.x;
+      reward.sprite.y =
+        invT * invT * reward.start.y +
+        2 * invT * t * reward.control.y +
+        t * t * reward.target.y;
+      reward.sprite.scale.set(0.18 - t * 0.08);
+      reward.sprite.alpha = 1 - t * 0.15;
+      reward.sprite.rotation += dt * 3.4;
+
+      if (t >= 1) {
+        this.rewardFlyLayer.removeChild(reward.sprite);
+        reward.sprite.destroy();
+        this.rewardFlies.splice(index, 1);
+      }
+    }
+  }
+
+  spawnRewardFly(texture: Texture, startX: number, startY: number) {
+    const sprite = new Sprite(texture);
+    sprite.anchor.set(0.5);
+    sprite.x = startX;
+    sprite.y = startY;
+    sprite.scale.set(0.18);
+
+    const target = this.getCounterTarget();
+    const control = new Point(
+      startX + (target.x - startX) * 0.55,
+      Math.min(startY, target.y) - 120
+    );
+
+    this.rewardFlyLayer.addChild(sprite);
+    this.rewardFlies.push({
+      sprite,
+      start: new Point(startX, startY),
+      control,
+      target,
+      progress: 0,
+    });
+  }
+
   setFooterVisible(value: boolean) {
     this.footerContainer.visible = value;
   }
@@ -169,12 +231,17 @@ export class HUD {
     this.muteWaves.alpha = value ? 0.25 : 1;
   }
 
+  private getCounterTarget() {
+    return new Point(this.moneyContainer.x + 118, this.moneyContainer.y + 42);
+  }
+
   getDebugMeta() {
     return {
       counterTop: this.moneyContainer.y,
       muteTop: this.muteButton.y - 18,
       muteCenterY: this.muteButton.y,
       counterCenterY: this.moneyContainer.y + 28,
+      flyCount: this.rewardFlies.length,
     };
   }
 }

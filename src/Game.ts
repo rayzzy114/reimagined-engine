@@ -1,4 +1,4 @@
-import { Application, Container, Graphics } from "pixi.js";
+import { Application, Assets, Container, Graphics, Texture } from "pixi.js";
 import { loadAssets } from "./utils/assets";
 import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, MAX_LIVES, INVINCIBILITY_DURATION, COLLECTIBLE_VALUE, PICKUP_RADIUS, LEVEL_DATA, EntityType, EntityFlag, PRAISE_PHRASES } from "./utils/constants";
 import { Background } from "./Background";
@@ -184,6 +184,7 @@ export class Game {
   private update(dt: number) {
     this.praisePopup.update(dt);
     this.ctaScreen.update(dt);
+    this.hud.update(dt);
 
     if (this.state === GameState.START) {
       this.startScreen.update(dt);
@@ -245,10 +246,10 @@ export class Game {
   private checkCollisions() {
     const playerBounds = inflateBounds(this.player.getBounds(), 6);
     const playerFeetBounds = {
-      x: playerBounds.x - 6,
-      y: playerBounds.y + playerBounds.height * 0.45,
-      width: playerBounds.width + 12,
-      height: playerBounds.height * 0.7,
+      x: playerBounds.x - 18,
+      y: playerBounds.y + playerBounds.height * 0.38,
+      width: playerBounds.width + 36,
+      height: playerBounds.height * 0.92,
     };
 
     // Collectibles
@@ -262,6 +263,11 @@ export class Game {
         this.collectCount++;
         this.hud.updateMoney(this.money);
         this.sounds.playCollect();
+        this.hud.spawnRewardFly(
+          this.resolveRewardFlyTexture(),
+          collectibleBounds.x + collectibleBounds.width / 2,
+          collectibleBounds.y + collectibleBounds.height / 2
+        );
 
         if (this.collectCount % 3 === 0) {
           const phrase = PRAISE_PHRASES[this.praiseIndex % PRAISE_PHRASES.length];
@@ -371,6 +377,10 @@ export class Game {
     this.applyDamage();
   }
 
+  debugSpawnRewardFly() {
+    this.hud.spawnRewardFly(this.resolveRewardFlyTexture(), 220, 540);
+  }
+
   private applyDamage() {
     this.lives--;
     this.hud.updateLives(this.lives);
@@ -388,5 +398,13 @@ export class Game {
     this.triggerDamageFlash();
     this.shakeScreen();
     return false;
+  }
+
+  private resolveRewardFlyTexture() {
+    return (
+      (Assets.get("paypalCounter") as Texture) ||
+      (Assets.get("coin") as Texture) ||
+      (Assets.get("dollar") as Texture)
+    );
   }
 }

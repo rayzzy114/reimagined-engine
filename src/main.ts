@@ -10,6 +10,7 @@ declare global {
       setMoney: (money: number) => void;
       tap: () => void;
       obstacleHit: () => void;
+      spawnRewardFly: () => void;
     };
   }
 }
@@ -51,6 +52,7 @@ async function init() {
     setMoney: (money: number) => game.debugSetMoney(money),
     tap: () => game.debugTap(),
     obstacleHit: () => game.debugObstacleHit(),
+    spawnRewardFly: () => game.debugSpawnRewardFly(),
   };
 }
 

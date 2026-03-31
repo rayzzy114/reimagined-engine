@@ -66,6 +66,20 @@ test("top hud keeps the sound button aligned with the paypal counter", async ({ 
   expect(Math.abs(snapshot.hud.muteCenterY - snapshot.hud.counterCenterY)).toBeLessThanOrEqual(2);
 });
 
+test("collecting money can spawn a fly-to-counter animation", async ({ page }) => {
+  await page.goto(playableUrl);
+  await page.waitForSelector("canvas");
+  await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
+
+  await page.evaluate(() => {
+    window.__PLAYABLE_TEST_API__?.spawnRewardFly();
+  });
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().hud.flyCount))
+    .toBeGreaterThan(0);
+});
+
 test("win state uses the payoff overlay style without the sky burst", async ({ page }) => {
   await page.goto(playableUrl);
   await page.waitForSelector("canvas");
