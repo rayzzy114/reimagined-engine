@@ -510,6 +510,7 @@ export class Game {
   private resolveRewardFlyTexture(usePaypal: boolean) {
     if (usePaypal) {
       return (
+        (Assets.get("paypalCounter") as Texture) ||
         (Assets.get("paypalCard") as Texture) ||
         (Assets.get("dollar") as Texture) ||
         (Assets.get("coin") as Texture)
@@ -519,7 +520,8 @@ export class Game {
     return (
       (Assets.get("dollar") as Texture) ||
       (Assets.get("coin") as Texture) ||
-      (Assets.get("paypalCard") as Texture)
+      (Assets.get("paypalCard") as Texture) ||
+      (Assets.get("paypalCounter") as Texture)
     );
   }
 }

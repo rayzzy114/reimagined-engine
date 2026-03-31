@@ -10,6 +10,7 @@ export class CTAScreen {
   private pulseTimer = 0;
   private introTimer = 0;
   private glowStrength = 0;
+  private cardCenterY = GAME_HEIGHT * 0.52;
 
   constructor() {
     this.container = new Container();
@@ -66,7 +67,7 @@ export class CTAScreen {
       const card = new Sprite(paypalCardTex);
       card.anchor.set(0.5);
       card.x = GAME_WIDTH / 2;
-      card.y = GAME_HEIGHT * 0.52;
+      card.y = this.cardCenterY;
       card.scale.set(0.46);
       this.content.addChild(card);
     }
@@ -116,8 +117,14 @@ export class CTAScreen {
     this.content.y -= pulse * 4;
     this.glowStrength = 0.16 + pulse * 0.12;
     this.heroGlow.clear();
-    this.heroGlow.ellipse(GAME_WIDTH / 2, GAME_HEIGHT * 0.58, 172 + pulse * 20, 124 + pulse * 12);
-    this.heroGlow.fill({ color: 0xffb14a, alpha: this.glowStrength });
+    this.heroGlow.roundRect(
+      GAME_WIDTH / 2 - (154 + pulse * 8),
+      this.cardCenterY - (88 + pulse * 6),
+      308 + pulse * 16,
+      176 + pulse * 12,
+      36
+    );
+    this.heroGlow.fill({ color: 0xffc15f, alpha: this.glowStrength });
   }
 
   show() {

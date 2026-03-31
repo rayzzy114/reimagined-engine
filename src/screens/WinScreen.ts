@@ -10,6 +10,7 @@ export class WinScreen {
   private introTimer = 0;
   private pulseTimer = 0;
   private glowStrength = 0;
+  private cardCenterY = GAME_HEIGHT * 0.52;
 
   constructor(onContinue: () => void, getMoney: () => number) {
     this.container = new Container();
@@ -36,7 +37,7 @@ export class WinScreen {
       const card = new Sprite(paypalCardTex);
       card.anchor.set(0.5);
       card.x = GAME_WIDTH / 2;
-      card.y = GAME_HEIGHT * 0.52;
+      card.y = this.cardCenterY;
       card.scale.set(0.46);
       this.content.addChild(card);
     }
@@ -131,7 +132,13 @@ export class WinScreen {
     this.content.y = GAME_HEIGHT * 0.026 * (1 - eased) - pulse * 4;
     this.glowStrength = 0.12 + pulse * 0.12;
     this.heroGlow.clear();
-    this.heroGlow.ellipse(GAME_WIDTH / 2, GAME_HEIGHT * 0.57, 168 + pulse * 16, 118 + pulse * 10);
+    this.heroGlow.roundRect(
+      GAME_WIDTH / 2 - (156 + pulse * 8),
+      this.cardCenterY - (90 + pulse * 6),
+      312 + pulse * 16,
+      180 + pulse * 12,
+      38
+    );
     this.heroGlow.fill({ color: 0xffd86b, alpha: this.glowStrength });
   }
 

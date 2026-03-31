@@ -117,12 +117,12 @@ export class Level {
         const isJackpotPickup = item.flags?.includes(EntityFlag.JACKPOT) ?? false;
         const useDollar = Math.round(item.distance * 10) % 4 < 2;
         const primaryTex = isJackpotPickup
-          ? (Assets.get("paypalCard") as Texture)
+          ? (Assets.get("paypalCounter") as Texture)
           : useDollar
             ? (Assets.get("dollar") as Texture)
             : (Assets.get("coin") as Texture);
         const fallbackTex = isJackpotPickup
-          ? (Assets.get("dollar") as Texture)
+          ? (Assets.get("paypalCard") as Texture)
           : useDollar
             ? (Assets.get("coin") as Texture)
             : (Assets.get("dollar") as Texture);
