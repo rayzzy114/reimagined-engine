@@ -114,15 +114,14 @@ export class Level {
         mainSprite = new Sprite(tex);
         mainSprite.anchor.set(0.5, 0.5);
         mainSprite.scale.set(isPaypalBanner ? 0.14 : 0.15);
-        
-        const glowTex = Assets.get("coinGlow") as Texture;
-        if (glowTex) {
-          glow = new Sprite(glowTex);
-          glow.anchor.set(0.5);
-          glow.scale.set(0.8);
-          glow.alpha = 0.8;
-          container.addChild(glow);
-        }
+
+        glow = new Sprite(Texture.WHITE);
+        glow.anchor.set(0.5);
+        glow.width = 58;
+        glow.height = 24;
+        glow.alpha = 0.12;
+        glow.tint = 0xffd86b;
+        container.addChild(glow);
         
         container.addChild(mainSprite);
         y = this.groundY - yOffset - 40;
@@ -142,19 +141,19 @@ export class Level {
       case EntityType.OBSTACLE: {
         const rockContainer = new Container();
         const rock = new Graphics();
-        rock.ellipse(0, 0, 52, 34);
-        rock.fill({ color: 0x8c93a1 });
-        rock.stroke({ color: 0x616974, width: 4 });
+        rock.roundRect(-34, -18, 68, 28, 14);
+        rock.fill({ color: 0x8790a1 });
+        rock.stroke({ color: 0x5f6674, width: 3 });
         rockContainer.addChild(rock);
 
         const highlight = new Graphics();
-        highlight.ellipse(-12, -8, 18, 10);
-        highlight.fill({ color: 0xc8cdd7, alpha: 0.55 });
+        highlight.roundRect(-18, -12, 36, 10, 5);
+        highlight.fill({ color: 0xd9ddea, alpha: 0.5 });
         rockContainer.addChild(highlight);
 
         mainSprite = rock;
         container.addChild(rockContainer);
-        y = this.groundY - 8;
+        y = this.groundY - 10;
         break;
       }
       default:
@@ -207,9 +206,20 @@ export class Level {
 
       getBounds() {
         const s = this.mainSprite;
+
+        if (this.type === EntityType.COLLECTIBLE) {
+          const bounds = s.getBounds();
+          return {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+          };
+        }
+
         const spriteW = Math.abs(s.width);
         const spriteH = s.height;
-        
+
         if (this.type === EntityType.ENEMY) {
           // Reference Hitbox: scale {X: 0.3, Y: 0.5}, offset {X: 0, Y: 0.2}
           const w = spriteW * 0.3;

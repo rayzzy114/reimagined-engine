@@ -230,27 +230,27 @@ export class Game {
 
   private checkCollisions() {
     const playerBounds = this.inflateBounds(this.player.getBounds(), 6);
-    const playerCenterX = playerBounds.x + playerBounds.width / 2;
-    const playerCenterY = playerBounds.y + playerBounds.height / 2;
 
     // Collectibles
     for (const collectible of this.level.getActiveCollectibles()) {
-      if (!collectible.collected) {
-        const dx = playerCenterX - collectible.x;
-        const dy = playerCenterY - collectible.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < PICKUP_RADIUS + 28) {
-          collectible.collect();
-          this.money += COLLECTIBLE_VALUE;
-          this.collectCount++;
-          this.hud.updateMoney(this.money);
-          this.sounds.playCollect();
+      if (collectible.collected) continue;
 
-          if (this.collectCount % 3 === 0) {
-            const phrase = PRAISE_PHRASES[this.praiseIndex % PRAISE_PHRASES.length];
-            this.praisePopup.show(phrase, collectible.x, collectible.y - 50);
-            this.praiseIndex++;
-          }
+      const collectibleBounds = this.inflateBounds(collectible.getBounds(), PICKUP_RADIUS * 0.15);
+      if (this.intersects(playerBounds, collectibleBounds)) {
+        collectible.collect();
+        this.money += COLLECTIBLE_VALUE;
+        this.collectCount++;
+        this.hud.updateMoney(this.money);
+        this.sounds.playCollect();
+
+        if (this.collectCount % 3 === 0) {
+          const phrase = PRAISE_PHRASES[this.praiseIndex % PRAISE_PHRASES.length];
+          this.praisePopup.show(
+            phrase,
+            collectibleBounds.x + collectibleBounds.width / 2,
+            collectibleBounds.y - 50
+          );
+          this.praiseIndex++;
         }
       }
     }
