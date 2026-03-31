@@ -5,7 +5,7 @@ import { THIEF_SHEET_DATA } from "./thiefSheet";
 // Asset imports
 import runnerSheetUrl from "../../assets/runner_spritesheet.png";
 import thiefSheetUrl from "../../assets/thief_spritesheet.png";
-import bgMainUrl from "../../assets/bg_main.png";
+import bgMainUrl from "../../assets/bg_main.webp";
 import tree1Url from "../../assets/tree1.png";
 import tree2Url from "../../assets/tree2.png";
 import lampUrl from "../../assets/lamp.png";
@@ -19,13 +19,13 @@ import finishPostUrl from "../../assets/finish_post.png";
 import finishTapeLeftUrl from "../../assets/finish_tape_left.png";
 import finishTapeRightUrl from "../../assets/finish_tape_right.png";
 import finishTapeTopUrl from "../../assets/finish_tape_top.png";
-import handUrl from "../../assets/hand.png";
+import handUrl from "../../assets/hand.webp";
 import paypalCounterUrl from "../../assets/paypal_counter.webp";
 import paypalCardUrl from "../../assets/paypal_card.webp";
 import failImageUrl from "../../assets/fail_image.png";
 import footerPortraitUrl from "../../assets/footer_portrait.webp";
 import footerLandscapeUrl from "../../assets/footer_landscape.webp";
-import lightsUrl from "../../assets/lights_effect.png";
+import lightsUrl from "../../assets/lights_effect.webp";
 import coinGlowUrl from "../../assets/coin_glow.webp";
 import ppMoriUrl from "../../assets/fonts/PPMori-Regular.otf";
 
