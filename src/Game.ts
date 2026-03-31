@@ -246,10 +246,10 @@ export class Game {
   private checkCollisions() {
     const playerBounds = inflateBounds(this.player.getBounds(), 6);
     const playerFeetBounds = {
-      x: playerBounds.x - 18,
-      y: playerBounds.y + playerBounds.height * 0.38,
-      width: playerBounds.width + 36,
-      height: playerBounds.height * 0.92,
+      x: playerBounds.x - 10,
+      y: playerBounds.y + playerBounds.height * 0.44,
+      width: playerBounds.width + 20,
+      height: playerBounds.height * 0.78,
     };
 
     // Collectibles
@@ -297,7 +297,7 @@ export class Game {
     // Obstacles
     if (!this.isInvincible) {
       for (const obstacle of this.level.getActiveObstacles()) {
-        const obstacleBounds = inflateBounds(obstacle.getBounds(), 14);
+        const obstacleBounds = inflateBounds(obstacle.getBounds(), 4);
         if (intersects(playerFeetBounds, obstacleBounds)) {
           if (this.applyDamage()) {
             return;
@@ -402,9 +402,9 @@ export class Game {
 
   private resolveRewardFlyTexture() {
     return (
-      (Assets.get("paypalCounter") as Texture) ||
-      (Assets.get("coin") as Texture) ||
-      (Assets.get("dollar") as Texture)
+      (Assets.get("paypalCard") as Texture) ||
+      (Assets.get("dollar") as Texture) ||
+      (Assets.get("coin") as Texture)
     );
   }
 }
