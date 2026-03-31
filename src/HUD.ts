@@ -24,51 +24,42 @@ export class HUD {
     this.container.addChild(heartContainer);
 
     const moneyContainer = new Container();
-    moneyContainer.x = GAME_WIDTH - 180;
-    moneyContainer.y = 30;
+    moneyContainer.x = GAME_WIDTH - 172;
+    moneyContainer.y = 18;
 
-    const paypalBg = new Graphics();
-    paypalBg.roundRect(0, 0, 160, 50, 12);
-    paypalBg.fill({ color: 0xffffff });
-    paypalBg.stroke({ color: 0x0070ba, width: 2 });
-    moneyContainer.addChild(paypalBg);
-
-    const moneyPill = new Graphics();
-    moneyPill.circle(22, 25, 14);
-    moneyPill.fill({ color: 0x0070ba });
-    moneyContainer.addChild(moneyPill);
-
-    const moneySymbol = new Text({
-      text: "$",
-      style: new TextStyle({
-        fontFamily: "Arial",
-        fontSize: 18,
-        fontWeight: "bold",
-        fill: 0xffffff,
-      }),
-    });
-    moneySymbol.anchor.set(0.5);
-    moneySymbol.x = 22;
-    moneySymbol.y = 25;
-    moneyContainer.addChild(moneySymbol);
+    const counterTex = Assets.get("paypalCounter") as Texture;
+    if (counterTex) {
+      const counter = new Sprite(counterTex);
+      counter.width = 165;
+      counter.height = 112;
+      moneyContainer.addChild(counter);
+    } else {
+      const paypalBg = new Graphics();
+      paypalBg.roundRect(0, 0, 160, 50, 12);
+      paypalBg.fill({ color: 0xffffff });
+      paypalBg.stroke({ color: 0x0070ba, width: 2 });
+      moneyContainer.addChild(paypalBg);
+    }
 
     this.moneyText = new Text({
       text: "$0",
       style: new TextStyle({
         fontFamily: "Arial",
-        fontSize: 30,
+        fontSize: 26,
         fontWeight: "bold",
-        fill: 0x333333,
+        fill: 0x103a8b,
+        stroke: { color: 0xffffff, width: 3 },
       }),
     });
-    this.moneyText.x = 50;
-    this.moneyText.y = 8;
+    this.moneyText.anchor.set(1, 0.5);
+    this.moneyText.x = 152;
+    this.moneyText.y = 27;
     moneyContainer.addChild(this.moneyText);
 
     this.container.addChild(moneyContainer);
 
     this.footerContainer = new Container();
-    this.footerContainer.y = GAME_HEIGHT - 90;
+    this.footerContainer.y = GAME_HEIGHT - 134;
 
     const footerTex = Assets.get("footerPortrait") as Texture;
     if (footerTex) {
@@ -76,12 +67,12 @@ export class HUD {
       footerSprite.x = 0;
       footerSprite.y = 0;
       footerSprite.width = GAME_WIDTH;
-      footerSprite.height = 90;
+      footerSprite.height = 134;
       this.footerContainer.addChild(footerSprite);
     }
     if (!footerTex) {
       const footerBg = new Graphics();
-      footerBg.roundRect(0, 0, GAME_WIDTH, 90, 20);
+      footerBg.roundRect(0, 0, GAME_WIDTH, 134, 20);
       footerBg.fill({ color: 0x6b4fa0 });
       this.footerContainer.addChild(footerBg);
     }

@@ -153,6 +153,7 @@ export class Game {
     this.background.update(dt);
     this.player.update(dt);
     this.level.update(dt);
+    this.updateFinishLine();
     this.finishRibbon.update(dt);
 
     if (this.isInvincible) {
@@ -172,6 +173,16 @@ export class Game {
     }
 
     this.checkCollisions();
+  }
+
+  private updateFinishLine() {
+    const totalDistance = LEVEL_DATA[LEVEL_DATA.length - 1].distance;
+    const remainingDistance = totalDistance - this.level.getCurrentDistance();
+
+    if (remainingDistance > 2) return;
+
+    this.finishRibbon.show();
+    this.finishRibbon.setPosition(remainingDistance * GAME_WIDTH);
   }
 
   private checkCollisions() {
