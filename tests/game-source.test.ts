@@ -20,11 +20,11 @@ describe("Game source regressions", () => {
     expect(source).not.toContain("(Math.random() - 0.5) * 10");
   });
 
-  it("keeps reference invincibility timing and resize-aware overlays", () => {
+  it("keeps jump recovery timing aligned with invincibility and resize-aware overlays", () => {
     const constantsPath = path.resolve(import.meta.dirname, "../src/utils/constants.ts");
     const startScreenPath = path.resolve(import.meta.dirname, "../src/screens/StartScreen.ts");
 
-    expect(readFileSync(constantsPath, "utf8")).toContain("export const INVINCIBILITY_DURATION = 500;");
+    expect(readFileSync(constantsPath, "utf8")).toContain("export const INVINCIBILITY_DURATION = 800;");
     expect(readFileSync(startScreenPath, "utf8")).toContain("this.overlay.rect(viewBounds.left, viewBounds.top, viewBounds.width, viewBounds.height);");
   });
 
@@ -49,6 +49,7 @@ describe("Game source regressions", () => {
     const gamePath = path.resolve(import.meta.dirname, "../src/Game.ts");
 
     expect(readFileSync(levelPath, "utf8")).toContain("const x = Math.max(viewBounds.right + 280, GAME_WIDTH + 360);");
+    expect(readFileSync(gamePath, "utf8")).toContain("const obstacleBounds = shrinkBounds(obstacle.getBounds(), 6);");
     expect(readFileSync(gamePath, "utf8")).toContain("if (intersects(playerBounds, obstacleBounds)) {");
   });
 

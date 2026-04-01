@@ -13,6 +13,7 @@ type BurstKind = "collect" | "hit";
 export class ParticleSystem {
   container: Container;
   private particles: Particle[] = [];
+  private graphicsPool: Graphics[] = [];
   private collectBursts = 0;
   private hitBursts = 0;
 
@@ -37,7 +38,8 @@ export class ParticleSystem {
 
       if (particle.life >= particle.maxLife) {
         this.container.removeChild(particle.graphics);
-        particle.graphics.destroy();
+        particle.graphics.visible = false;
+        this.graphicsPool.push(particle.graphics);
         this.particles.splice(index, 1);
         continue;
       }
@@ -72,9 +74,7 @@ export class ParticleSystem {
       const angle = (Math.PI * 2 * index) / count + (Math.random() - 0.5) * 0.45;
       const velocity = speed * (0.6 + Math.random() * 0.45);
       const size = kind === "collect" ? 4 + Math.random() * 3 : 5 + Math.random() * 2;
-      const particleGraphic = new Graphics();
-      particleGraphic.circle(0, 0, size);
-      particleGraphic.fill({ color });
+      const particleGraphic = this.acquireGraphic(size, color, x, y);
       particleGraphic.x = x;
       particleGraphic.y = y;
       this.container.addChild(particleGraphic);
@@ -87,5 +87,19 @@ export class ParticleSystem {
         maxLife: 0.24 + Math.random() * 0.14,
       });
     }
+  }
+
+  private acquireGraphic(size: number, color: number, x: number, y: number) {
+    const particleGraphic = this.graphicsPool.pop() ?? new Graphics();
+    particleGraphic.clear();
+    particleGraphic.circle(0, 0, size);
+    particleGraphic.fill({ color });
+    particleGraphic.alpha = 1;
+    particleGraphic.scale.set(1);
+    particleGraphic.visible = true;
+    particleGraphic.x = x;
+    particleGraphic.y = y;
+
+    return particleGraphic;
   }
 }

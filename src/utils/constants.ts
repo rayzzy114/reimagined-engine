@@ -21,7 +21,7 @@ export const PICKUP_RADIUS = 96;
 export const ENEMY_CHASE_SPEED = 300;
 
 export const MAX_LIVES = 3;
-export const INVINCIBILITY_DURATION = 500;
+export const INVINCIBILITY_DURATION = 800;
 
 export const FINISH_DISTANCE = 18;
 

@@ -355,7 +355,7 @@ export class Game {
     // Obstacles
     if (!this.isInvincible) {
       for (const obstacle of this.level.getActiveObstacles()) {
-        const obstacleBounds = inflateBounds(obstacle.getBounds(), 12);
+        const obstacleBounds = shrinkBounds(obstacle.getBounds(), 6);
         if (intersects(playerBounds, obstacleBounds)) {
           obstacle.onHit();
           obstacle.sprite.alpha = 0.5;
