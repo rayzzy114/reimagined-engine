@@ -1,8 +1,10 @@
 import { Assets, Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
+import { GAME_WIDTH, GAME_HEIGHT, viewBounds } from "../utils/constants";
 
 export class LoseScreen {
+  private static readonly COUNTDOWN_SECONDS = 56;
   container: Container;
+  private overlay: Graphics;
   private getMoney: () => number;
   private failSprite: Sprite | null = null;
   private panel: Container;
@@ -18,10 +20,9 @@ export class LoseScreen {
     this.container.visible = false;
     this.getMoney = getMoney;
 
-    const overlay = new Graphics();
-    overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x121018, alpha: 0.72 });
-    this.container.addChild(overlay);
+    this.overlay = new Graphics();
+    this.layoutOverlay();
+    this.container.addChild(this.overlay);
 
     const topCapsule = new Graphics();
     topCapsule.roundRect(GAME_WIDTH / 2 - 88, 18, 176, 34, 17);
@@ -162,7 +163,7 @@ export class LoseScreen {
       this.failSprite.scale.set(0);
       this.failSprite.rotation = 0;
     }
-    this.countdownText.text = "00:56";
+    this.countdownText.text = `00:${String(LoseScreen.COUNTDOWN_SECONDS).padStart(2, "0")}`;
     this.amountText.text = `$${this.getMoney().toFixed(2)}`;
     this.countdownDanger = false;
     this.countdownText.style.fill = 0xffffff;
@@ -172,11 +173,12 @@ export class LoseScreen {
 
   update(dt: number) {
     if (!this.container.visible) return;
-    this.timer += dt;
+    const stableDt = Math.max(dt, 1 / 20);
+    this.timer += stableDt;
 
     if (this.failSprite && this.timer < 0.45) {
       const t = Math.min(this.timer / 0.45, 1);
-      this.failSprite.scale.set(0.02 + t * 1.15);
+      this.failSprite.scale.set(0.02 + t * 0.98);
       this.failSprite.rotation = Math.sin(t * Math.PI) * 0.02;
     }
 
@@ -187,9 +189,9 @@ export class LoseScreen {
       if (this.failSprite) this.failSprite.alpha = 1 - fade;
     }
 
-    const secondsLeft = Math.max(0, 56 - Math.floor(this.timer));
+    const secondsLeft = Math.max(0, LoseScreen.COUNTDOWN_SECONDS - Math.floor(this.timer));
     this.countdownText.text = `00:${String(secondsLeft).padStart(2, "0")}`;
-    const buttonScale = 1 + Math.sin(this.timer * 6.1) * 0.09;
+    const buttonScale = 1.08 + Math.sin(this.timer * 6.1) * 0.035;
     this.buttonContainer.scale.set(buttonScale);
     this.countdownDanger = secondsLeft < 10;
     if (this.countdownDanger) {
@@ -222,5 +224,15 @@ export class LoseScreen {
       countdownScale: this.countdownText.scale.x,
       ctaButtonScale: this.buttonContainer.scale.x,
     };
+  }
+
+  onResize() {
+    this.layoutOverlay();
+  }
+
+  private layoutOverlay() {
+    this.overlay.clear();
+    this.overlay.rect(viewBounds.left, viewBounds.top, viewBounds.width, viewBounds.height);
+    this.overlay.fill({ color: 0x121018, alpha: 0.72 });
   }
 }

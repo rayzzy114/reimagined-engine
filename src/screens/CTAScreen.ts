@@ -1,8 +1,9 @@
 import { Assets, Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
+import { GAME_WIDTH, GAME_HEIGHT, viewBounds } from "../utils/constants";
 
 export class CTAScreen {
   container: Container;
+  private overlay: Graphics;
   private content: Container;
   private heroGlow: Graphics;
   private buttonContainer: Container;
@@ -16,10 +17,9 @@ export class CTAScreen {
     this.container = new Container();
     this.container.visible = false;
 
-    const overlay = new Graphics();
-    overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x121018, alpha: 0.76 });
-    this.container.addChild(overlay);
+    this.overlay = new Graphics();
+    this.layoutOverlay();
+    this.container.addChild(this.overlay);
 
     const topCapsule = new Graphics();
     topCapsule.roundRect(GAME_WIDTH / 2 - 88, 18, 176, 34, 17);
@@ -106,15 +106,14 @@ export class CTAScreen {
     const introT = Math.min(this.introTimer / 0.48, 1);
     const eased = 1 - Math.pow(1 - introT, 3);
     this.content.alpha = eased;
-    this.content.scale.set(0.9 + eased * 0.12);
-    this.content.x = GAME_WIDTH * 0.048 * (1 - eased);
-    this.content.y = GAME_HEIGHT * 0.032 * (1 - eased);
+    this.content.scale.set(0.9 + eased * 0.1);
+    this.content.x = (GAME_WIDTH * (1 - this.content.scale.x)) / 2 * (1 - eased);
+    this.content.y = (GAME_HEIGHT * (1 - this.content.scale.y)) / 2 * (1 - eased);
 
     this.pulseTimer += dt;
     const pulse = Math.sin(this.pulseTimer * 5.2) * 0.5 + 0.5;
-    const scale = 1 + Math.sin(this.pulseTimer * 6.3) * 0.095;
+    const scale = 1.08 + Math.sin(this.pulseTimer * 6.3) * 0.035;
     this.buttonContainer.scale.set(scale);
-    this.content.y -= pulse * 4;
     this.glowStrength = 0.16 + pulse * 0.12;
     this.heroGlow.clear();
     this.heroGlow.roundRect(
@@ -183,5 +182,15 @@ export class CTAScreen {
       accentGlowStrength: this.glowStrength,
       ctaButtonScale: this.buttonContainer.scale.x,
     };
+  }
+
+  onResize() {
+    this.layoutOverlay();
+  }
+
+  private layoutOverlay() {
+    this.overlay.clear();
+    this.overlay.rect(viewBounds.left, viewBounds.top, viewBounds.width, viewBounds.height);
+    this.overlay.fill({ color: 0x121018, alpha: 0.76 });
   }
 }

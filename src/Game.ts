@@ -1,6 +1,6 @@
-import { Application, Assets, Container, Graphics, Texture } from "pixi.js";
+import { Application, Assets, Container, Graphics, Rectangle, Texture } from "pixi.js";
 import { loadAssets } from "./utils/assets";
-import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, MAX_LIVES, INVINCIBILITY_DURATION, COLLECTIBLE_VALUE, PICKUP_RADIUS, LEVEL_DATA, EntityType, EntityFlag, PRAISE_PHRASES } from "./utils/constants";
+import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, MAX_LIVES, INVINCIBILITY_DURATION, COLLECTIBLE_VALUE, PICKUP_RADIUS, LEVEL_DATA, EntityType, EntityFlag, PRAISE_PHRASES, viewBounds } from "./utils/constants";
 import { Background } from "./Background";
 import { Player } from "./Player";
 import { Level } from "./Level";
@@ -84,6 +84,7 @@ export class Game {
     this.gameContainer.addChild(this.finishRibbon.backContainer);
 
     this.player = new Player();
+    this.gameContainer.addChild(this.player.shadow);
     this.gameContainer.addChild(this.player.container);
 
     this.level = new Level(this.gameContainer);
@@ -94,8 +95,9 @@ export class Game {
     this.gameContainer.addChild(this.finishRibbon.frontContainer);
 
     this.damageFlash = new Graphics();
-    this.damageFlash.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    this.damageFlash.fill({ color: 0xff3344, alpha: 0 });
+    this.damageFlash.rect(-1000, -1000, GAME_WIDTH + 2000, GAME_HEIGHT + 2000);
+    this.damageFlash.fill({ color: 0xff3344 });
+    this.damageFlash.alpha = 0;
     this.damageFlash.visible = false;
     this.gameContainer.addChild(this.damageFlash);
 
@@ -131,10 +133,7 @@ export class Game {
 
     this.app.stage.eventMode = "static";
     this.app.stage.hitArea = this.app.screen;
-    this.app.stage.on("pointertap", (event) => {
-      if (event.target !== this.app.stage) {
-        return;
-      }
+    this.app.stage.on("pointertap", () => {
       this.onTap();
     });
 
@@ -144,25 +143,35 @@ export class Game {
   }
 
   private setState(newState: GameState) {
+    const previousState = this.state;
     this.state = newState;
     this.isFinishBreakPending = false;
     this.finishBreakTimer = 0;
 
     this.startScreen.container.visible = newState === GameState.START;
     this.tutorialOverlay.container.visible = newState === GameState.TUTORIAL_PAUSE;
+    if (newState === GameState.TUTORIAL_PAUSE) {
+      this.tutorialOverlay.show();
+    }
     this.winScreen.container.visible = newState === GameState.WIN;
     this.loseScreen.container.visible = newState === GameState.LOSE;
     this.ctaScreen.container.visible = newState === GameState.CTA;
     this.hud.setFooterVisible(shouldShowHudFooter(newState));
 
-    if (newState === GameState.WIN || newState === GameState.LOSE || newState === GameState.CTA) {
+    const preserveEndZoomIntoCta =
+      newState === GameState.CTA &&
+      (previousState === GameState.WIN || previousState === GameState.LOSE);
+
+    if (newState === GameState.WIN || newState === GameState.LOSE || (newState === GameState.CTA && !preserveEndZoomIntoCta)) {
       this.endZoomTimer = this.endZoomDuration;
     } else {
-      this.endZoomTimer = 0;
-      this.endZoomScale = 1;
-      this.gameContainer.scale.set(1);
-      this.gameContainer.x = 0;
-      this.gameContainer.y = 0;
+      if (!preserveEndZoomIntoCta) {
+        this.endZoomTimer = 0;
+        this.endZoomScale = 1;
+        this.gameContainer.scale.set(1);
+        this.gameContainer.x = 0;
+        this.gameContainer.y = 0;
+      }
     }
 
     if (newState === GameState.PLAYING || newState === GameState.TUTORIAL_PAUSE) {
@@ -220,6 +229,7 @@ export class Game {
     this.praisePopup.update(dt);
     this.winScreen.update(dt);
     this.ctaScreen.update(dt);
+    this.tutorialOverlay.update(dt);
     this.hud.update(dt);
     this.particles.update(dt);
     this.finishRibbon.update(dt);
@@ -238,6 +248,7 @@ export class Game {
     if (this.state !== GameState.PLAYING) return;
 
     this.background.update(dt);
+
     this.player.update(dt);
     this.level.update(dt);
     this.updateFinishLine();
@@ -290,14 +301,19 @@ export class Game {
   }
 
   private updateEndZoom(dt: number) {
-    if (this.endZoomTimer <= 0) return;
-    this.endZoomTimer = Math.max(0, this.endZoomTimer - dt);
-    const progress = 1 - this.endZoomTimer / this.endZoomDuration;
-    const eased = 1 - Math.pow(1 - progress, 3);
-    this.endZoomScale = 1 + eased * 0.1;
-    this.gameContainer.scale.set(this.endZoomScale);
-    this.gameContainer.x = (GAME_WIDTH * (1 - this.endZoomScale)) / 2;
-    this.gameContainer.y = (GAME_HEIGHT * (1 - this.endZoomScale)) / 2 + eased * 18;
+    this.updateShake(dt);
+    if (this.endZoomTimer > 0) {
+      this.endZoomTimer = Math.max(0, this.endZoomTimer - dt);
+      const progress = 1 - this.endZoomTimer / this.endZoomDuration;
+      const eased = 1 - Math.pow(1 - progress, 3);
+      this.endZoomScale = 1 + eased * 0.1;
+      this.gameContainer.scale.set(this.endZoomScale);
+      this.gameContainer.x = (GAME_WIDTH * (1 - this.endZoomScale)) / 2 + this.shakeOffset.x;
+      this.gameContainer.y = (GAME_HEIGHT * (1 - this.endZoomScale)) / 2 + eased * 18 + this.shakeOffset.y;
+    } else {
+      this.gameContainer.x = this.shakeOffset.x;
+      this.gameContainer.y = this.shakeOffset.y;
+    }
   }
 
   private checkCollisions() {
@@ -326,7 +342,7 @@ export class Game {
     // Enemies
     if (!this.isInvincible) {
       for (const enemy of this.level.getActiveEnemies()) {
-        const enemyBounds = shrinkBounds(enemy.getBounds(), 18);
+        const enemyBounds = enemy.getBounds();
         if (!enemy.hit && intersects(playerBounds, enemyBounds)) {
           enemy.onHit();
           if (this.applyDamage()) {
@@ -339,8 +355,10 @@ export class Game {
     // Obstacles
     if (!this.isInvincible) {
       for (const obstacle of this.level.getActiveObstacles()) {
-        const obstacleBounds = inflateBounds(obstacle.getBounds(), 4);
-        if (intersects(playerFeetBounds, obstacleBounds)) {
+        const obstacleBounds = inflateBounds(obstacle.getBounds(), 12);
+        if (intersects(playerBounds, obstacleBounds)) {
+          obstacle.onHit();
+          obstacle.sprite.alpha = 0.5;
           if (this.applyDamage()) {
             return;
           }
@@ -378,7 +396,7 @@ export class Game {
       const enemyBounds = shrinkBounds(enemy.getBounds(), 10);
       const enemyRight = enemyBounds.x + enemyBounds.width;
       const enemyCenterY = enemyBounds.y + enemyBounds.height / 2;
-      const passedRecently = enemyRight < playerCenterX && enemyRight > playerCenterX - 72;
+      const passedRecently = enemyRight < playerCenterX + 24 && enemyRight > playerCenterX - 72;
       const verticalClose = Math.abs(enemyCenterY - playerCenterY) <= 82;
 
       if (passedRecently && verticalClose) {
@@ -393,7 +411,7 @@ export class Game {
       const obstacleBounds = obstacle.getBounds();
       const obstacleRight = obstacleBounds.x + obstacleBounds.width;
       const obstacleCenterY = obstacleBounds.y + obstacleBounds.height / 2;
-      const passedRecently = obstacleRight < playerCenterX && obstacleRight > playerCenterX - 68;
+      const passedRecently = obstacleRight < playerCenterX + 20 && obstacleRight > playerCenterX - 68;
       const verticalClose = Math.abs(obstacleCenterY - playerFeetCenterY) <= 70;
 
       if (passedRecently && verticalClose) {
@@ -409,24 +427,44 @@ export class Game {
     this.damageFlash.alpha = 0.22;
   }
 
+  private shakeOffset = { x: 0, y: 0 };
+  private shakeElapsed = 0;
+  private shakeDuration = 0;
+
   private shakeScreen() {
-    const original = { x: this.gameContainer.x, y: this.gameContainer.y };
-    let elapsed = 0;
-    const duration = 150;
-    const shakeCallback = (t: any) => {
-      elapsed += t.deltaMS;
-      if (elapsed > duration) {
-        this.gameContainer.x = original.x;
-        this.gameContainer.y = original.y;
-        this.app.ticker.remove(shakeCallback);
-        return;
-      }
-      const decay = 1 - elapsed / duration;
-      const magnitude = 12 * decay;
-      this.gameContainer.x = original.x + (Math.random() - 0.5) * magnitude * 2;
-      this.gameContainer.y = original.y + (Math.random() - 0.5) * magnitude * 2;
-    };
-    this.app.ticker.add(shakeCallback);
+    this.shakeElapsed = 0;
+    this.shakeDuration = 150;
+  }
+
+  private updateShake(dt: number) {
+    if (this.shakeDuration <= 0) return;
+    this.shakeElapsed += dt * 1000;
+    if (this.shakeElapsed >= this.shakeDuration) {
+      this.shakeOffset.x = 0;
+      this.shakeOffset.y = 0;
+      this.shakeDuration = 0;
+      return;
+    }
+    const decay = 1 - this.shakeElapsed / this.shakeDuration;
+    const magnitude = 12 * decay;
+    this.shakeOffset.x = (Math.random() - 0.5) * magnitude * 2;
+    this.shakeOffset.y = (Math.random() - 0.5) * magnitude * 2;
+  }
+
+  onResize() {
+    this.background.onResize();
+    this.hud.onResize();
+    this.startScreen.onResize();
+    this.tutorialOverlay.onResize();
+    this.winScreen.onResize();
+    this.loseScreen.onResize();
+    this.ctaScreen.onResize();
+    // Rebuild damage flash to cover visible area
+    this.damageFlash.clear();
+    this.damageFlash.rect(viewBounds.left, viewBounds.top, viewBounds.width, viewBounds.height);
+    this.damageFlash.fill({ color: 0xff3344 });
+    // Update hit area to cover full visible area in game coordinates
+    this.app.stage.hitArea = new Rectangle(viewBounds.left, viewBounds.top, viewBounds.width, viewBounds.height);
   }
 
   getDebugSnapshot() {
@@ -453,6 +491,11 @@ export class Game {
       lastNearMissLabel: this.lastNearMissLabel,
       footerVisible: this.hud.isFooterVisible(),
       hud: this.hud.getDebugMeta(),
+      stage: {
+        x: this.app.stage.x,
+        y: this.app.stage.y,
+        scale: this.app.stage.scale.x,
+      },
       jackpot: this.level.getJackpotDebug(),
       collectibles: this.level.getCollectibleDebug(),
       nextWarning: this.level.getNextWarningDebug(),

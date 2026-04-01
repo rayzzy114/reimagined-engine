@@ -1,8 +1,9 @@
 import { Container, Text, TextStyle, Sprite, Assets, Texture, Graphics } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT } from "../utils/constants";
+import { GAME_WIDTH, GAME_HEIGHT, viewBounds } from "../utils/constants";
 
 export class StartScreen {
   container: Container;
+  private overlay: Graphics;
   private handSprite: Sprite | null = null;
   private pulseTimer = 0;
 
@@ -10,10 +11,9 @@ export class StartScreen {
     this.container = new Container();
 
     // Semi-transparent overlay
-    const overlay = new Graphics();
-    overlay.rect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    overlay.fill({ color: 0x040814, alpha: 0.38 });
-    this.container.addChild(overlay);
+    this.overlay = new Graphics();
+    this.layoutOverlay();
+    this.container.addChild(this.overlay);
 
     const lightsTex = Assets.get("lights") as Texture;
     if (lightsTex) {
@@ -67,5 +67,15 @@ export class StartScreen {
       this.handSprite.scale.set(scale);
       this.handSprite.y = GAME_HEIGHT * 0.76 + Math.sin(this.pulseTimer * 3.2) * 6;
     }
+  }
+
+  onResize() {
+    this.layoutOverlay();
+  }
+
+  private layoutOverlay() {
+    this.overlay.clear();
+    this.overlay.rect(viewBounds.left, viewBounds.top, viewBounds.width, viewBounds.height);
+    this.overlay.fill({ color: 0x040814, alpha: 0.38 });
   }
 }

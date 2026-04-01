@@ -1,6 +1,16 @@
 export const GAME_WIDTH = 720;
 export const GAME_HEIGHT = 1280;
 
+/** Visible area in game coordinates (updated on resize) */
+export const viewBounds = {
+  left: 0,
+  top: 0,
+  right: GAME_WIDTH,
+  bottom: GAME_HEIGHT,
+  width: GAME_WIDTH,
+  height: GAME_HEIGHT,
+};
+
 export const BASE_SPEED = 600;
 export const JUMP_HEIGHT = 300;
 export const JUMP_DURATION = 800;
@@ -36,52 +46,49 @@ export interface LevelItem {
   distance: number;
   yOffset?: number;
   flags?: EntityFlag[];
+  collectibleVariant?: "cash" | "paypal";
 }
 
 export const LEVEL_DATA: LevelItem[] = [
-  { type: EntityType.COLLECTIBLE, distance: 1 },
-  { type: EntityType.COLLECTIBLE, distance: 2 },
+  { type: EntityType.COLLECTIBLE, distance: 1, yOffset: 90, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 2, yOffset: 130, collectibleVariant: "paypal" },
   { type: EntityType.ENEMY, distance: 3, flags: [EntityFlag.TUTORIAL_PAUSE] },
-  { type: EntityType.COLLECTIBLE, distance: 4, yOffset: 50 },
-  { type: EntityType.COLLECTIBLE, distance: 4.2, yOffset: 150 },
-  { type: EntityType.COLLECTIBLE, distance: 4.4, yOffset: 250 },
-  { type: EntityType.COLLECTIBLE, distance: 4.6, yOffset: 150 },
-  { type: EntityType.COLLECTIBLE, distance: 4.8, yOffset: 50 },
+  { type: EntityType.COLLECTIBLE, distance: 4.0, yOffset: 110, collectibleVariant: "paypal" },
+  { type: EntityType.COLLECTIBLE, distance: 4.28, yOffset: 230, collectibleVariant: "paypal" },
+  { type: EntityType.COLLECTIBLE, distance: 4.56, yOffset: 320, collectibleVariant: "paypal" },
+  { type: EntityType.COLLECTIBLE, distance: 4.84, yOffset: 230, collectibleVariant: "paypal" },
+  { type: EntityType.COLLECTIBLE, distance: 5.12, yOffset: 110, collectibleVariant: "paypal" },
   { type: EntityType.OBSTACLE, distance: 5.6, flags: [EntityFlag.SHOW_WARNING] },
-  { type: EntityType.COLLECTIBLE, distance: 6.4 },
+  { type: EntityType.COLLECTIBLE, distance: 6.45, yOffset: 120, collectibleVariant: "cash" },
   { type: EntityType.ENEMY, distance: 7 },
-  { type: EntityType.COLLECTIBLE, distance: 7.6 },
-  { type: EntityType.COLLECTIBLE, distance: 7.8, yOffset: 100 },
-  { type: EntityType.COLLECTIBLE, distance: 8, yOffset: 200 },
-  { type: EntityType.COLLECTIBLE, distance: 8.2, yOffset: 280 },
-  { type: EntityType.COLLECTIBLE, distance: 8.4, yOffset: 200 },
-  { type: EntityType.COLLECTIBLE, distance: 8.6, yOffset: 100 },
+  { type: EntityType.COLLECTIBLE, distance: 7.55, yOffset: 100, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 7.9, yOffset: 220, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 8.25, yOffset: 340, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 8.6, yOffset: 220, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 8.95, yOffset: 100, collectibleVariant: "cash" },
   { type: EntityType.OBSTACLE, distance: 9, flags: [EntityFlag.SHOW_WARNING] },
-  { type: EntityType.COLLECTIBLE, distance: 9.6 },
+  { type: EntityType.COLLECTIBLE, distance: 9.7, yOffset: 110, collectibleVariant: "paypal" },
   { type: EntityType.ENEMY, distance: 10 },
-  { type: EntityType.COLLECTIBLE, distance: 10.6 },
-  { type: EntityType.COLLECTIBLE, distance: 11, yOffset: 80 },
-  { type: EntityType.COLLECTIBLE, distance: 11.2, yOffset: 180 },
-  { type: EntityType.COLLECTIBLE, distance: 11.4, yOffset: 80 },
+  { type: EntityType.COLLECTIBLE, distance: 10.7, yOffset: 120, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 11.05, yOffset: 250, collectibleVariant: "paypal" },
+  { type: EntityType.COLLECTIBLE, distance: 11.4, yOffset: 120, collectibleVariant: "paypal" },
   { type: EntityType.OBSTACLE, distance: 12 },
   { type: EntityType.ENEMY, distance: 12.6 },
-  { type: EntityType.COLLECTIBLE, distance: 13 },
-  { type: EntityType.COLLECTIBLE, distance: 13.2, yOffset: 100 },
-  { type: EntityType.COLLECTIBLE, distance: 13.4, yOffset: 200 },
-  { type: EntityType.COLLECTIBLE, distance: 13.6, yOffset: 100 },
+  { type: EntityType.COLLECTIBLE, distance: 13.05, yOffset: 110, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 13.38, yOffset: 250, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 13.71, yOffset: 110, collectibleVariant: "cash" },
   { type: EntityType.OBSTACLE, distance: 14, flags: [EntityFlag.SHOW_WARNING] },
-  { type: EntityType.COLLECTIBLE, distance: 14.5 },
+  { type: EntityType.COLLECTIBLE, distance: 14.55, yOffset: 120, collectibleVariant: "paypal" },
   { type: EntityType.ENEMY, distance: 15 },
-  { type: EntityType.COLLECTIBLE, distance: 15.4, yOffset: 80 },
-  { type: EntityType.COLLECTIBLE, distance: 15.6, yOffset: 180 },
-  { type: EntityType.COLLECTIBLE, distance: 15.8, yOffset: 260 },
-  { type: EntityType.COLLECTIBLE, distance: 16, yOffset: 180 },
-  { type: EntityType.COLLECTIBLE, distance: 16.2, yOffset: 80 },
+  { type: EntityType.COLLECTIBLE, distance: 15.35, yOffset: 100, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 15.63, yOffset: 220, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 15.91, yOffset: 330, collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 16.19, yOffset: 220, collectibleVariant: "cash" },
   { type: EntityType.OBSTACLE, distance: 16.5 },
-  { type: EntityType.COLLECTIBLE, distance: 16.8, yOffset: 120, flags: [EntityFlag.JACKPOT] },
-  { type: EntityType.COLLECTIBLE, distance: 16.92, yOffset: 60, flags: [EntityFlag.JACKPOT] },
-  { type: EntityType.COLLECTIBLE, distance: 17.04, yOffset: 150, flags: [EntityFlag.JACKPOT] },
-  { type: EntityType.COLLECTIBLE, distance: 17.16, yOffset: 90, flags: [EntityFlag.JACKPOT] },
+  { type: EntityType.COLLECTIBLE, distance: 16.78, yOffset: 130, flags: [EntityFlag.JACKPOT], collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 16.98, yOffset: 240, flags: [EntityFlag.JACKPOT], collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 17.18, yOffset: 330, flags: [EntityFlag.JACKPOT], collectibleVariant: "cash" },
+  { type: EntityType.COLLECTIBLE, distance: 17.38, yOffset: 240, flags: [EntityFlag.JACKPOT], collectibleVariant: "cash" },
   { type: EntityType.FINISH, distance: 18 },
 ];
 

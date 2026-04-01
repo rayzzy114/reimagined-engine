@@ -1,5 +1,5 @@
 import { Container, Sprite, AnimatedSprite, Texture, Assets, Text, TextStyle, Graphics } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, LEVEL_DATA, EntityType, EntityFlag, ENEMY_CHASE_SPEED, LevelItem, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
+import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, LEVEL_DATA, EntityType, EntityFlag, ENEMY_CHASE_SPEED, LevelItem, PLAYER_GROUND_Y_RATIO, viewBounds } from "./utils/constants";
 import { thiefSpritesheet } from "./utils/assets";
 
 export interface ActiveEntity {
@@ -17,6 +17,7 @@ export interface ActiveEntity {
   warningLabel?: Text;
   kind?: string;
 
+  spawnAge: number;
   collect(): void;
   onHit(): void;
   getBounds(): { x: number; y: number; width: number; height: number };
@@ -30,6 +31,8 @@ export class Level {
   private finishReached = false;
   private groundY: number;
   private tutorialTriggered = false;
+  private readonly tutorialDistance = 3;
+  private elapsed = 0;
   private jackpotTotalCount = LEVEL_DATA.filter((item) => item.flags?.includes(EntityFlag.JACKPOT)).length;
 
   constructor(gameContainer: Container) {
@@ -38,13 +41,18 @@ export class Level {
   }
 
   update(dt: number) {
+    this.elapsed += dt;
     this.currentDistance += (BASE_SPEED * dt) / GAME_WIDTH;
+    const spawnLeadDistance = viewBounds.width / GAME_WIDTH + 0.75;
 
     // Spawn entities when they're about to enter screen
     while (
       this.spawnPointer < LEVEL_DATA.length &&
-      LEVEL_DATA[this.spawnPointer].distance <= this.currentDistance + 2
+      LEVEL_DATA[this.spawnPointer].distance <= this.currentDistance + spawnLeadDistance
     ) {
+      if (!this.tutorialTriggered && LEVEL_DATA[this.spawnPointer].distance > this.tutorialDistance) {
+        break;
+      }
       this.spawnEntity(LEVEL_DATA[this.spawnPointer]);
       this.spawnPointer++;
     }
@@ -53,38 +61,59 @@ export class Level {
     for (const entity of this.entities) {
       if (!entity.active) continue;
 
+      entity.spawnAge += dt;
       entity.x -= BASE_SPEED * dt;
 
-      // Enemy chase
-      if (entity.type === EntityType.ENEMY && !entity.hit && entity.x < GAME_WIDTH * 0.7) {
-        entity.x -= ENEMY_CHASE_SPEED * dt;
+      // Entrance scale-in
+      if (entity.spawnAge < 0.2 && entity.type === EntityType.COLLECTIBLE) {
+        const entranceT = Math.min(entity.spawnAge / 0.2, 1);
+        const eased = 1 - Math.pow(1 - entranceT, 3);
+        entity.sprite.scale.set(eased);
+      } else if (entity.type === EntityType.COLLECTIBLE) {
+        entity.sprite.scale.set(1);
+      }
+
+      // Enemy chase or death fade
+      if (entity.type === EntityType.ENEMY) {
+        if (!entity.hit && entity.x < GAME_WIDTH * 0.7) {
+          entity.x -= ENEMY_CHASE_SPEED * dt;
+        }
+        if (entity.hit) {
+          entity.sprite.alpha = Math.max(0, entity.sprite.alpha - dt * 3);
+          entity.sprite.y -= dt * 120;
+          if (entity.sprite.alpha <= 0) {
+            entity.active = false;
+            entity.sprite.visible = false;
+          }
+        }
       }
 
       // Glow pulsing
       if (entity.glow) {
-        const pulse = Math.sin(Date.now() * 0.01) * 0.1 + 0.9;
+        const pulse = Math.sin(this.elapsed * 10 + entity.x * 0.05) * 0.1 + 0.9;
         entity.glow.scale.set(pulse * 0.8);
-        entity.glow.alpha = (Math.sin(Date.now() * 0.01) * 0.2 + 0.6) * 0.8;
+        entity.glow.alpha = (Math.sin(this.elapsed * 10 + entity.x * 0.05) * 0.2 + 0.6) * 0.8;
       }
 
       // Collectible bobbing
       if (entity.type === EntityType.COLLECTIBLE && !entity.collected) {
-        entity.mainSprite.y = Math.sin(Date.now() * 0.005 + entity.x * 0.01) * 5;
-        entity.mainSprite.rotation = Math.sin(Date.now() * 0.003 + entity.x * 0.02) * 0.1;
+        entity.mainSprite.y = Math.sin(this.elapsed * 5 + entity.x * 0.03) * 5;
+        entity.mainSprite.rotation = Math.sin(this.elapsed * 3 + entity.x * 0.02) * 0.1;
       }
 
-      // Off-screen removal
-      if (entity.x < -200) {
+      // Off-screen removal — only despawn after the full sprite has cleared the visible area
+      const spriteBounds = entity.sprite.getBounds();
+      if (spriteBounds.x + spriteBounds.width < viewBounds.left - 120) {
         entity.active = false;
         entity.sprite.visible = false;
         if (entity.warningLabel) entity.warningLabel.visible = false;
       }
 
-      // Warning label
+      // Warning label — clamp to visible area so player always sees it
       if (entity.warningLabel && entity.active) {
-        entity.warningLabel.x = entity.x;
+        entity.warningLabel.x = Math.max(viewBounds.left + 80, Math.min(entity.x, viewBounds.right - 80));
         entity.warningLabel.y = entity.y - 100;
-        entity.warningLabel.visible = entity.x < GAME_WIDTH + 50;
+        entity.warningLabel.visible = entity.x < viewBounds.right + 200 && entity.x > viewBounds.left - 100;
       }
 
       entity.sprite.x = entity.x;
@@ -98,12 +127,15 @@ export class Level {
 
   setCurrentDistance(distance: number) {
     this.currentDistance = Math.max(0, distance);
+    if (this.currentDistance > this.tutorialDistance) {
+      this.tutorialTriggered = true;
+    }
   }
 
   private spawnEntity(item: LevelItem) {
     if (item.type === EntityType.FINISH) return;
 
-    const x = 1080;
+    const x = Math.max(viewBounds.right + 280, GAME_WIDTH + 360);
     const yOffset = item.yOffset || 0;
 
     const container = new Container();
@@ -115,7 +147,12 @@ export class Level {
     switch (item.type) {
       case EntityType.COLLECTIBLE: {
         const isJackpotPickup = item.flags?.includes(EntityFlag.JACKPOT) ?? false;
-        const useDollar = isJackpotPickup || Math.round(item.distance * 10) % 4 < 2;
+        const useDollar =
+          item.collectibleVariant === "cash"
+            ? true
+            : item.collectibleVariant === "paypal"
+              ? false
+              : isJackpotPickup || Math.round(item.distance * 10) % 4 < 2;
 
         if (useDollar) {
           const tex = (Assets.get("dollar") as Texture) || (Assets.get("coin") as Texture);
@@ -213,6 +250,7 @@ export class Level {
       collected: false,
       hit: false,
       nearMissAwarded: false,
+      spawnAge: 0,
       flags: item.flags ? [...item.flags] : undefined,
       warningLabel,
       kind,
@@ -240,38 +278,41 @@ export class Level {
           };
         }
 
-        const spriteW = Math.abs(s.width);
-        const spriteH = s.height;
+        const bounds = this.sprite.getBounds();
+        const spriteW = bounds.width;
+        const spriteH = bounds.height;
+        const centerX = bounds.x + bounds.width / 2;
+        const centerY = bounds.y + bounds.height / 2;
 
         if (this.type === EntityType.ENEMY) {
           // Reference Hitbox: scale {X: 0.3, Y: 0.5}, offset {X: 0, Y: 0.2}
           const w = spriteW * 0.3;
           const h = spriteH * 0.5;
-          const centerY = this.y - spriteH / 2 + (0.2 * spriteH);
+          const hitCenterY = centerY + (0.2 * spriteH);
           return {
-            x: this.x - w / 2,
-            y: centerY - h / 2,
+            x: centerX - w / 2,
+            y: hitCenterY - h / 2,
             width: w,
             height: h,
           };
         }
 
         if (this.type === EntityType.OBSTACLE) {
-          const w = Math.max(112, spriteW * 0.96);
-          const h = Math.max(84, spriteH * 0.82);
+          const w = spriteW * 0.86;
+          const h = spriteH * 0.82;
           return {
-            x: this.x - w / 2,
-            y: this.y - h + 14,
+            x: centerX - w / 2,
+            y: bounds.y + spriteH - h,
             width: w,
             height: h,
           };
         }
-        
+
         const w = spriteW * 0.7;
         const h = spriteH * 0.8;
         return {
-          x: this.x - w / 2,
-          y: this.type === EntityType.COLLECTIBLE ? this.y - h / 2 : this.y - h,
+          x: centerX - w / 2,
+          y: centerY - h / 2,
           width: w,
           height: h,
         };
@@ -380,8 +421,9 @@ export class Level {
   private createConeCluster() {
     const cluster = new Graphics();
 
-    this.drawCone(cluster, -40, 0, 0.86);
+    // Draw back cone first (higher y = further back), then front cones
     this.drawCone(cluster, 0, -12, 1);
+    this.drawCone(cluster, -40, 0, 0.86);
     this.drawCone(cluster, 38, 0, 0.82);
 
     return cluster;

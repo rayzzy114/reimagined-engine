@@ -1,10 +1,11 @@
-import { Container, AnimatedSprite, Texture, Color } from "pixi.js";
+import { Container, AnimatedSprite, Graphics, Texture, Color } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X_RATIO, JUMP_HEIGHT, JUMP_DURATION, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
 import { runnerSpritesheet } from "./utils/assets";
 
 export class Player {
   private readonly baseScale = 0.54;
   container: Container;
+  shadow: Graphics;
   private runAnim: AnimatedSprite;
   private jumpAnim: AnimatedSprite;
   private hurtAnim: AnimatedSprite;
@@ -19,6 +20,13 @@ export class Player {
   constructor() {
     this.container = new Container();
     this.groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
+
+    // Ground shadow (rendered separately, stays on ground)
+    this.shadow = new Graphics();
+    this.shadow.ellipse(0, 0, 38, 10);
+    this.shadow.fill({ color: 0x000000, alpha: 0.22 });
+    this.shadow.x = GAME_WIDTH * PLAYER_X_RATIO;
+    this.shadow.y = this.groundY + 4;
 
     const runFrames = runnerSpritesheet.animations["run"];
     const jumpFrames = runnerSpritesheet.animations["jump"];
@@ -109,6 +117,12 @@ export class Player {
         this.container.scale.set(this.baseScale);
       }
     }
+
+    // Update shadow: shrink and fade as player goes higher
+    const heightRatio = (this.groundY - this.container.y) / JUMP_HEIGHT;
+    const shadowScale = 1 - heightRatio * 0.4;
+    this.shadow.scale.set(shadowScale, shadowScale * 0.8);
+    this.shadow.alpha = 0.22 * (1 - heightRatio * 0.6);
 
     if (this.invincible) {
       this.blinkTimer += dt;

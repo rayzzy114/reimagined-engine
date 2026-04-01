@@ -1,5 +1,5 @@
 import { Container, Point, Sprite, Text, TextStyle, Texture, Assets, Graphics } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT, MAX_LIVES } from "./utils/constants";
+import { GAME_WIDTH, GAME_HEIGHT, MAX_LIVES, viewBounds } from "./utils/constants";
 import { createPaypalBadge } from "./utils/paypalBadge";
 
 interface FlyReward {
@@ -14,12 +14,15 @@ interface FlyReward {
 
 export class HUD {
   container: Container;
+  private heartContainer: Container;
   private heartSprites: Graphics[] = [];
   private moneyText: Text;
   private moneyContainer: Container;
   private counterShell: Container;
   private counterPopHalo: Graphics;
   private footerContainer: Container;
+  private footerSprite: Sprite | null = null;
+  private footerFallback: Graphics | null = null;
   private muteButton: Container;
   private muteWaves: Graphics;
   private muteSlash: Graphics;
@@ -30,6 +33,7 @@ export class HUD {
   private counterPopDuration = 0.36;
   private lastFlyVariant: "cash" | "paypal" | null = null;
   private lastFlyControlY: number | null = null;
+  private heartBounceTimers: number[] = [0, 0, 0];
 
   constructor(onToggleMute: () => void, isMuted: () => boolean) {
     this.container = new Container();
@@ -37,17 +41,15 @@ export class HUD {
     this.container.addChild(this.rewardFlyLayer);
 
     // Hearts (drawn as Graphics since we don't have a heart asset that's separate)
-    const heartContainer = new Container();
-    heartContainer.x = 30;
-    heartContainer.y = 24;
+    this.heartContainer = new Container();
 
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.createHeart(0xff4466);
       heart.x = i * 50;
-      heartContainer.addChild(heart);
+      this.heartContainer.addChild(heart);
       this.heartSprites.push(heart);
     }
-    this.container.addChild(heartContainer);
+    this.container.addChild(this.heartContainer);
 
     this.moneyContainer = new Container();
     this.moneyContainer.x = GAME_WIDTH - 172;
@@ -75,7 +77,7 @@ export class HUD {
     }
 
     this.moneyText = new Text({
-      text: "$0",
+      text: "$0.00",
       style: new TextStyle({
         fontFamily: "PP Mori",
         fontSize: 26,
@@ -98,7 +100,7 @@ export class HUD {
     this.muteButton.y = this.moneyContainer.y + 28;
 
     const muteBg = new Graphics();
-    muteBg.roundRect(-18, -18, 36, 36, 10);
+    muteBg.roundRect(-24, -24, 48, 48, 12);
     muteBg.fill({ color: 0xffffff, alpha: 0.95 });
     muteBg.stroke({ color: 0x2d66b3, width: 2 });
     this.muteButton.addChild(muteBg);
@@ -141,25 +143,9 @@ export class HUD {
     this.container.addChild(this.muteButton);
 
     this.footerContainer = new Container();
-    this.footerContainer.y = GAME_HEIGHT - 134;
-
-    const footerTex = Assets.get("footerPortrait") as Texture;
-    if (footerTex) {
-      const footerSprite = new Sprite(footerTex);
-      footerSprite.x = 0;
-      footerSprite.y = 0;
-      footerSprite.width = GAME_WIDTH;
-      footerSprite.height = 134;
-      this.footerContainer.addChild(footerSprite);
-    }
-    if (!footerTex) {
-      const footerBg = new Graphics();
-      footerBg.roundRect(0, 0, GAME_WIDTH, 134, 20);
-      footerBg.fill({ color: 0x6b4fa0 });
-      this.footerContainer.addChild(footerBg);
-    }
-
     this.container.addChild(this.footerContainer);
+    this.layoutFooter();
+    this.onResize();
   }
 
   private createHeart(color: number): Graphics {
@@ -178,15 +164,32 @@ export class HUD {
 
   updateLives(lives: number) {
     for (let i = 0; i < MAX_LIVES; i++) {
-      this.heartSprites[i].alpha = i < lives ? 1 : 0.3;
+      const heart = this.heartSprites[i];
+      if (i >= lives && heart.alpha > 0.3) {
+        // Animate the lost heart
+        heart.scale.set(1.5);
+        heart.alpha = 0.3;
+        this.heartBounceTimers[i] = 0.25;
+      } else {
+        heart.alpha = i < lives ? 1 : 0.3;
+      }
     }
   }
 
   updateMoney(amount: number) {
-    this.moneyText.text = `$${amount}`;
+    this.moneyText.text = `$${amount.toFixed(2)}`;
   }
 
   update(dt: number) {
+    // Heart bounce animation
+    for (let i = 0; i < this.heartBounceTimers.length; i++) {
+      if (this.heartBounceTimers[i] > 0) {
+        this.heartBounceTimers[i] = Math.max(0, this.heartBounceTimers[i] - dt);
+        const p = this.heartBounceTimers[i] / 0.25;
+        this.heartSprites[i].scale.set(1 + p * 0.5);
+      }
+    }
+
     for (let index = this.rewardFlies.length - 1; index >= 0; index--) {
       const reward = this.rewardFlies[index];
       reward.progress = Math.min(1, reward.progress + dt * 2.8);
@@ -275,6 +278,28 @@ export class HUD {
     this.footerContainer.visible = value;
   }
 
+  onResize() {
+    const headerTop = viewBounds.top + 6;
+    const narrowViewport = viewBounds.width <= 480;
+    const heartScale = narrowViewport ? 0.9 : 1;
+    const heartSpacing = narrowViewport ? 44 : 50;
+
+    this.heartContainer.x = viewBounds.left + (narrowViewport ? 12 : 18);
+    this.heartContainer.y = headerTop + 2;
+    this.heartContainer.scale.set(heartScale);
+    this.heartSprites.forEach((heart, index) => {
+      heart.x = index * heartSpacing;
+    });
+
+    this.moneyContainer.x = viewBounds.right - 172;
+    this.moneyContainer.y = headerTop;
+
+    this.muteButton.x = this.moneyContainer.x - 48;
+    this.muteButton.y = this.moneyContainer.y + 28;
+
+    this.layoutFooter();
+  }
+
   isFooterVisible() {
     return this.footerContainer.visible;
   }
@@ -291,6 +316,47 @@ export class HUD {
 
   private getCounterTarget() {
     return new Point(this.moneyContainer.x + 118, this.moneyContainer.y + 42);
+  }
+
+  private layoutFooter() {
+    const landscape = viewBounds.width > viewBounds.height;
+    const footerKey = landscape ? "footerLandscape" : "footerPortrait";
+    const footerTex = Assets.get(footerKey) as Texture;
+    const footerWidth = viewBounds.width;
+    const fallbackHeight = landscape ? 92 : 134;
+
+    if (footerTex) {
+      if (!this.footerSprite) {
+        this.footerSprite = new Sprite(footerTex);
+        this.footerContainer.addChild(this.footerSprite);
+      }
+      this.footerSprite.texture = footerTex;
+      this.footerSprite.x = viewBounds.left;
+      this.footerSprite.width = footerWidth;
+      this.footerSprite.height = footerTex.height * (footerWidth / footerTex.width);
+      this.footerSprite.y = viewBounds.bottom - this.footerSprite.height;
+    } else {
+      if (!this.footerFallback) {
+        this.footerFallback = new Graphics();
+        this.footerContainer.addChild(this.footerFallback);
+      }
+      this.footerFallback.clear();
+      this.footerFallback.roundRect(
+        viewBounds.left,
+        viewBounds.bottom - fallbackHeight,
+        footerWidth,
+        fallbackHeight,
+        20
+      );
+      this.footerFallback.fill({ color: 0x6b4fa0 });
+    }
+
+    if (this.footerFallback) {
+      this.footerFallback.visible = !footerTex;
+    }
+    if (this.footerSprite) {
+      this.footerSprite.visible = !!footerTex;
+    }
   }
 
   getDebugMeta() {

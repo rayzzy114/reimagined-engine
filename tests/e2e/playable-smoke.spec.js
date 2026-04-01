@@ -126,16 +126,22 @@ test("mute button toggles audio without triggering gameplay", async ({ page }) =
   const before = await page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot());
   expect(before.state).toBe("playing");
   expect(before.sound.isMuted).toBe(false);
-  const box = await page.locator("canvas").boundingBox();
-  const scaleX = box.width / GAME_WIDTH;
-  const scaleY = box.height / GAME_HEIGHT;
+  const clickPoint = await page.evaluate(() => {
+    const snapshot = window.__PLAYABLE_TEST_API__?.snapshot();
+    if (!snapshot) return null;
+
+    return {
+      x: snapshot.stage.x + snapshot.hud.muteCenterX * snapshot.stage.scale,
+      y: snapshot.stage.y + snapshot.hud.muteCenterY * snapshot.stage.scale,
+    };
+  });
 
   await page
     .locator("canvas")
     .click({
       position: {
-        x: before.hud.muteCenterX * scaleX,
-        y: before.hud.muteCenterY * scaleY,
+        x: clickPoint.x,
+        y: clickPoint.y,
       },
       force: true,
     });
