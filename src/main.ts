@@ -12,6 +12,7 @@ declare global {
       setLoseTimer: (seconds: number) => void;
       tap: () => void;
       obstacleHit: () => void;
+      spawnObstacleCollision: () => void;
       collectPickup: () => void;
       spawnRewardFly: () => void;
       triggerNearMiss: () => void;
@@ -151,6 +152,7 @@ async function init() {
     setLoseTimer: (seconds: number) => game.debugSetLoseTimer(seconds),
     tap: () => game.debugTap(),
     obstacleHit: () => game.debugObstacleHit(),
+    spawnObstacleCollision: () => game.debugSpawnObstacleCollision(),
     collectPickup: () => game.debugCollectPickup(),
     spawnRewardFly: () => game.debugSpawnRewardFly(),
     triggerNearMiss: () => game.debugTriggerNearMiss(),
