@@ -12,6 +12,8 @@ import lampUrl from "../../assets/lamp.png";
 import bush1Url from "../../assets/bush1.png";
 import bush2Url from "../../assets/bush2.png";
 import bush3Url from "../../assets/bush3.png";
+import bushPremium1Url from "../../assets/bush_premium1.png";
+import bushPremium2Url from "../../assets/bush_premium2.png";
 import dollarUrl from "../../assets/dollar.png";
 import coinUrl from "../../assets/coin_collectible.png";
 import handUrl from "../../assets/hand.webp";
@@ -33,6 +35,8 @@ const assetMap: Record<string, string> = {
   bush1: bush1Url,
   bush2: bush2Url,
   bush3: bush3Url,
+  bushPremium1: bushPremium1Url,
+  bushPremium2: bushPremium2Url,
   dollar: dollarUrl,
   coin: coinUrl,
   hand: handUrl,
@@ -66,6 +70,10 @@ export async function loadAssets(): Promise<void> {
   const thiefTex = Assets.get("thiefSheet") as Texture;
   thiefSpritesheet = new Spritesheet(thiefTex, THIEF_SHEET_DATA as any);
   await thiefSpritesheet.parse();
+}
+
+export function getRunnerSpritesheet(): Spritesheet {
+  return runnerSpritesheet;
 }
 
 export function getTexture(name: string): Texture {

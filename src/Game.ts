@@ -143,6 +143,7 @@ export class Game {
   }
 
   private setState(newState: GameState) {
+    if (this.state === newState) return;
     const previousState = this.state;
     this.state = newState;
     this.isFinishBreakPending = false;
@@ -212,10 +213,12 @@ export class Game {
         break;
       case GameState.WIN:
         this.sounds.playClick();
+        this.setState(GameState.CTA);
         this.ctaScreen.triggerCTA();
         break;
       case GameState.LOSE:
         this.sounds.playClick();
+        this.setState(GameState.CTA);
         this.ctaScreen.triggerCTA();
         break;
       case GameState.CTA:
@@ -302,9 +305,17 @@ export class Game {
 
   private updateEndZoom(dt: number) {
     this.updateShake(dt);
-    if (this.endZoomTimer > 0) {
-      this.endZoomTimer = Math.max(0, this.endZoomTimer - dt);
-      const progress = 1 - this.endZoomTimer / this.endZoomDuration;
+
+    const isEndState =
+      this.state === GameState.WIN ||
+      this.state === GameState.LOSE ||
+      this.state === GameState.CTA;
+
+    if (this.endZoomTimer > 0 || (isEndState && this.endZoomScale !== 1)) {
+      if (this.endZoomTimer > 0) {
+        this.endZoomTimer = Math.max(0, this.endZoomTimer - dt);
+      }
+      const progress = this.endZoomTimer > 0 ? 1 - this.endZoomTimer / this.endZoomDuration : 1;
       const eased = 1 - Math.pow(1 - progress, 3);
       this.endZoomScale = 1 + eased * 0.1;
       this.gameContainer.scale.set(this.endZoomScale);
@@ -355,7 +366,7 @@ export class Game {
     // Obstacles
     if (!this.isInvincible) {
       for (const obstacle of this.level.getActiveObstacles()) {
-        const obstacleBounds = shrinkBounds(obstacle.getBounds(), 6);
+        const obstacleBounds = obstacle.getBounds();
         if (intersects(playerBounds, obstacleBounds)) {
           obstacle.onHit();
           obstacle.sprite.alpha = 0.5;
@@ -529,6 +540,18 @@ export class Game {
 
   debugObstacleHit() {
     this.applyDamage();
+  }
+
+  debugSpawnObstacleCollision() {
+    const playerBounds = inflateBounds(this.player.getBounds(), 6);
+    const obstacle = this.level.debugSpawnObstacleAt(playerBounds.x + playerBounds.width / 2);
+    const obstacleBounds = obstacle.getBounds();
+    const edgeOverlap = 2;
+    const targetCenterX = playerBounds.x + playerBounds.width - edgeOverlap + obstacleBounds.width / 2;
+
+    obstacle.x = targetCenterX;
+    obstacle.sprite.x = targetCenterX;
+    this.checkCollisions();
   }
 
   debugCollectPickup() {

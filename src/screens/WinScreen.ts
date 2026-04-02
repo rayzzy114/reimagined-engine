@@ -17,6 +17,8 @@ export class WinScreen {
   private rewardTargetAmount = 0;
   private rewardTickTimer = 0;
   private readonly rewardTickDuration = 0.9;
+  private startedAtMs = 0;
+  private lastRewardUpdateMs = 0;
 
   constructor(onContinue: () => void, getMoney: () => number) {
     this.container = new Container();
@@ -121,6 +123,8 @@ export class WinScreen {
     this.rewardTargetAmount = money;
     this.rewardDisplayAmount = 0;
     this.rewardTickTimer = 0;
+    this.startedAtMs = 0;
+    this.lastRewardUpdateMs = 0;
     this.rewardAmountText.text = "$0.00";
     this.introTimer = 0;
     this.pulseTimer = 0;
@@ -132,14 +136,30 @@ export class WinScreen {
   }
 
   update(dt: number) {
-    if (!this.container.visible) return;
-    const stableDt = Math.max(dt, 0.1);
-    this.introTimer += stableDt;
-    this.pulseTimer += stableDt;
+    if (!this.container.visible) {
+      this.startedAtMs = 0;
+      return;
+    }
+
+    if (this.startedAtMs === 0) {
+      this.startedAtMs = performance.now();
+    }
+
+    const nowMs = performance.now();
+    const elapsedSeconds = Math.max(0, (nowMs - this.startedAtMs) / 1000);
+    this.introTimer = elapsedSeconds;
+    this.pulseTimer = elapsedSeconds;
     const t = Math.min(this.introTimer / 0.48, 1);
     const eased = 1 - Math.pow(1 - t, 3);
     const pulse = Math.sin(this.pulseTimer * 5.4) * 0.5 + 0.5;
-    this.rewardTickTimer = Math.min(this.rewardTickDuration, this.rewardTickTimer + stableDt);
+
+    if (this.lastRewardUpdateMs === 0) {
+      this.lastRewardUpdateMs = nowMs;
+    }
+
+    const rewardDeltaSeconds = Math.max(0, (nowMs - this.lastRewardUpdateMs) / 1000);
+    this.lastRewardUpdateMs = nowMs;
+    this.rewardTickTimer = Math.min(this.rewardTickDuration, this.rewardTickTimer + Math.min(rewardDeltaSeconds, 0.12));
     const rewardProgress = this.rewardTickTimer / this.rewardTickDuration;
     const rewardEased = 1 - Math.pow(1 - rewardProgress, 3);
     this.rewardDisplayAmount =

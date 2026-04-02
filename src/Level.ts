@@ -132,10 +132,10 @@ export class Level {
     }
   }
 
-  private spawnEntity(item: LevelItem) {
+  private spawnEntity(item: LevelItem, spawnX?: number) {
     if (item.type === EntityType.FINISH) return;
 
-    const x = Math.max(viewBounds.right + 280, GAME_WIDTH + 360);
+    const x = spawnX ?? Math.max(viewBounds.right + 280, GAME_WIDTH + 360);
     const yOffset = item.yOffset || 0;
 
     const container = new Container();
@@ -351,6 +351,11 @@ export class Level {
 
   getActiveObstacles(): ActiveEntity[] {
     return this.entities.filter(e => e.active && e.type === EntityType.OBSTACLE);
+  }
+
+  debugSpawnObstacleAt(x: number) {
+    this.spawnEntity({ type: EntityType.OBSTACLE, distance: this.currentDistance }, x);
+    return this.entities[this.entities.length - 1];
   }
 
   isFinishReached(): boolean {

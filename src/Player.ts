@@ -1,6 +1,6 @@
 import { Container, AnimatedSprite, Graphics, Texture, Color } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X_RATIO, JUMP_HEIGHT, JUMP_DURATION, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
-import { runnerSpritesheet } from "./utils/assets";
+import { getRunnerSpritesheet, type RunnerSkinId } from "./utils/assets";
 
 export class Player {
   private readonly baseScale = 0.54;
@@ -28,6 +28,7 @@ export class Player {
     this.shadow.x = GAME_WIDTH * PLAYER_X_RATIO;
     this.shadow.y = this.groundY + 4;
 
+    const runnerSpritesheet = getRunnerSpritesheet();
     const runFrames = runnerSpritesheet.animations["run"];
     const jumpFrames = runnerSpritesheet.animations["jump"];
     const hurtFrames = runnerSpritesheet.animations["hurt"];
@@ -55,9 +56,28 @@ export class Player {
 
     this.currentAnim = this.runAnim;
 
-    this.container.scale.set(this.baseScale);
+    this.setVisualScale(1, 1);
     this.container.x = GAME_WIDTH * PLAYER_X_RATIO;
     this.container.y = this.groundY;
+  }
+
+  private setVisualScale(scaleX: number, scaleY: number) {
+    this.container.scale.set(this.baseScale * scaleX, this.baseScale * scaleY);
+  }
+
+  private applySkinTextures() {
+    const spritesheet = getRunnerSpritesheet();
+    this.runAnim.textures = spritesheet.animations["run"];
+    this.jumpAnim.textures = spritesheet.animations["jump"];
+    this.hurtAnim.textures = spritesheet.animations["hurt"];
+
+    if (this.currentAnim === this.runAnim) {
+      this.runAnim.gotoAndPlay(0);
+    } else if (this.currentAnim === this.jumpAnim) {
+      this.jumpAnim.gotoAndPlay(0);
+    } else {
+      this.hurtAnim.gotoAndPlay(0);
+    }
   }
 
   private switchAnim(anim: AnimatedSprite) {
@@ -102,7 +122,7 @@ export class Player {
         const jumpPhase = Math.sin(Math.PI * this.jumpProgress);
         const stretchX = 1 - jumpPhase * 0.12;
         const stretchY = 1 + jumpPhase * 0.15;
-        this.container.scale.set(this.baseScale * stretchX, this.baseScale * stretchY);
+        this.setVisualScale(stretchX, stretchY);
       }
     }
 
@@ -112,9 +132,9 @@ export class Player {
         const progress = this.landSquashTimer / 0.12;
         const squashX = 1 + progress * 0.12;
         const squashY = 1 - progress * 0.1;
-        this.container.scale.set(this.baseScale * squashX, this.baseScale * squashY);
+        this.setVisualScale(squashX, squashY);
       } else {
-        this.container.scale.set(this.baseScale);
+        this.setVisualScale(1, 1);
       }
     }
 

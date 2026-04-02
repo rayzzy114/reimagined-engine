@@ -1,10 +1,15 @@
 import { Assets, Container, Graphics, Sprite, Texture } from "pixi.js";
-import { GAME_WIDTH, GAME_HEIGHT, BASE_SPEED, viewBounds } from "./utils/constants";
+import { GAME_HEIGHT, BASE_SPEED, viewBounds } from "./utils/constants";
+
+type DecorLane = "rear" | "front";
+type DecorRole = "tree" | "bush";
 
 interface SidewalkDecor {
-  sprite: Container;
+  sprite: Container | Sprite;
   speed: number;
-  lane: "rear" | "front";
+  lane: DecorLane;
+  role: DecorRole;
+  kind: string;
 }
 
 export class Background {
@@ -17,12 +22,12 @@ export class Background {
   private readonly stripeSpeed = 280;
   private readonly stripeSpacing = 170;
   private readonly stripeRotation = 0;
+  private readonly rearDecorSpeed = BASE_SPEED * 0.28;
+  private readonly frontDecorSpeed = BASE_SPEED * 0.46;
 
   private rearDecorLayer: Container;
   private frontDecorLayer: Container;
   private decors: SidewalkDecor[] = [];
-  private rearSpawnTimer = 0;
-  private frontSpawnTimer = 0;
   private elapsed = 0;
 
   constructor() {
@@ -125,10 +130,82 @@ export class Background {
   }
 
   getDebugMeta() {
+    const rearTreeDecor = this.decors.filter((decor) => decor.lane === "rear" && decor.role === "tree");
+    const frontTreeDecor = this.decors.filter((decor) => decor.lane === "front" && decor.role === "tree");
+    const rearBushDecor = this.decors.filter((decor) => decor.lane === "rear" && decor.role === "bush");
+    const frontBushDecor = this.decors.filter((decor) => decor.lane === "front" && decor.role === "bush");
+    const bushDecor = [...rearBushDecor, ...frontBushDecor];
+    const visibleRearTreeXs = rearTreeDecor
+      .filter((decor) => this.isDecorVisible(decor))
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const visibleFrontTreeXs = frontTreeDecor
+      .filter((decor) => this.isDecorVisible(decor))
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const visibleRearBushXs = rearBushDecor
+      .filter((decor) => this.isDecorVisible(decor))
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const visibleFrontBushXs = frontBushDecor
+      .filter((decor) => this.isDecorVisible(decor))
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const visibleBushXs = bushDecor
+      .filter((decor) => this.isDecorVisible(decor))
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const rearDecorSpeeds = rearTreeDecor
+      .map((decor) => Number(decor.speed.toFixed(2)));
+    const frontDecorSpeeds = frontTreeDecor
+      .map((decor) => Number(decor.speed.toFixed(2)));
+    const rearTreeHeights = rearTreeDecor
+      .map((decor) => Number(decor.sprite.height.toFixed(2)));
+    const frontTreeHeights = frontTreeDecor
+      .map((decor) => Number(decor.sprite.height.toFixed(2)));
+    const rearBushHeights = rearBushDecor
+      .map((decor) => Number(decor.sprite.height.toFixed(2)));
+    const frontBushHeights = frontBushDecor
+      .map((decor) => Number(decor.sprite.height.toFixed(2)));
+    const bushHeights = bushDecor
+      .map((decor) => Number(decor.sprite.height.toFixed(2)));
+    const rearTreeXs = rearTreeDecor
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const frontTreeXs = frontTreeDecor
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const rearBushXs = rearBushDecor
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const frontBushXs = frontBushDecor
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+    const bushXs = bushDecor
+      .map((decor) => Number(decor.sprite.x.toFixed(2)));
+
     return {
       stripeOffset: Number(this.stripeOffset.toFixed(2)),
       stripeCount: this.stripes.length,
       stripeRotation: this.stripeRotation,
+      rearTreeTargetCount: this.getRearTreeTargetCount(),
+      frontTreeTargetCount: this.getFrontTreeTargetCount(),
+      rearBushTargetCount: this.getRearBushTargetCount(),
+      frontBushTargetCount: this.getFrontBushTargetCount(),
+      rearDecorSpeeds,
+      frontDecorSpeeds,
+      rearTreeHeights,
+      frontTreeHeights,
+      rearBushHeights,
+      frontBushHeights,
+      bushHeights,
+      rearTreeXs,
+      frontTreeXs,
+      rearBushXs,
+      frontBushXs,
+      bushXs,
+      visibleRearTreeXs,
+      visibleFrontTreeXs,
+      visibleRearBushXs,
+      visibleFrontBushXs,
+      visibleBushXs,
+      visibleRearTreeCount: visibleRearTreeXs.length,
+      visibleFrontTreeCount: visibleFrontTreeXs.length,
+      visibleRearBushCount: visibleRearBushXs.length,
+      visibleFrontBushCount: visibleFrontBushXs.length,
+      visibleBushCount: visibleBushXs.length,
+      decorKinds: this.decors.map((decor) => decor.kind),
     };
   }
 
@@ -137,18 +214,47 @@ export class Background {
     this.stripeLayer.x = viewBounds.left - this.stripeSpacing * 2 - this.stripeOffset;
   }
 
-  private seedInitialDecor() {
-    const rearStartX = viewBounds.left + 120;
-    const rearEndX = viewBounds.right - 120;
-    const frontStartX = viewBounds.left + 90;
-    const frontEndX = viewBounds.right - 90;
+  private usesMinimalHorizonDecor() {
+    return false;
+  }
 
-    for (let x = rearStartX; x <= rearEndX; x += 240) {
-      this.spawnDecor("rear", x);
+  private isCompactView() {
+    return viewBounds.height > GAME_HEIGHT;
+  }
+
+  private seedInitialDecor() {
+    const compact = this.isCompactView();
+    const rearTreeXs = this.buildLanePositions(
+      this.getRearTreeTargetCount(),
+      compact ? 56 : 84,
+      compact ? 124 : 90,
+      compact ? [0, -10, 12] : [0, -22, 16, -12, 10],
+      compact ? 192 : 182
+    );
+    const frontTreeXs = this.buildLanePositions(
+      this.getFrontTreeTargetCount(),
+      compact ? 48 : 72,
+      compact ? 136 : 64,
+      compact ? [0, -8, 10] : [0, -16, 18, -12, 14],
+      compact ? 238 : 168
+    );
+
+    for (const x of rearTreeXs) {
+      this.spawnTree("rear", x);
     }
 
-    for (let x = frontStartX; x <= frontEndX; x += 180) {
-      this.spawnDecor("front", x);
+    for (const x of frontTreeXs) {
+      this.spawnTree("front", x);
+    }
+
+    const rearGapIndexes = this.pickSeedGapIndexes(rearTreeXs.length - 1, this.getRearBushTargetCount());
+    for (const gapIndex of rearGapIndexes) {
+      this.spawnBushBetweenTrees("rear", rearTreeXs[gapIndex], rearTreeXs[gapIndex + 1], true);
+    }
+
+    const frontGapIndexes = this.pickSeedGapIndexes(frontTreeXs.length - 1, this.getFrontBushTargetCount());
+    for (const gapIndex of frontGapIndexes) {
+      this.spawnBushBetweenTrees("front", frontTreeXs[gapIndex], frontTreeXs[gapIndex + 1], true);
     }
   }
 
@@ -158,30 +264,275 @@ export class Background {
       decor.sprite.destroy();
     }
     this.decors = [];
-    this.rearSpawnTimer = 0;
-    this.frontSpawnTimer = 0;
     this.seedInitialDecor();
   }
 
-  private spawnDecor(lane: "rear" | "front", startX?: number) {
-    const sprite = this.createTreeDecor(lane);
-    const baseScale = lane === "rear" ? 0.68 + Math.random() * 0.1 : 0.92 + Math.random() * 0.18;
-    sprite.scale.set(baseScale);
+  private getRearTreeTargetCount() {
+    if (this.usesMinimalHorizonDecor()) {
+      return 0;
+    }
 
-    const yBase = lane === "rear" ? GAME_HEIGHT * 0.505 : GAME_HEIGHT * 0.548;
-    const yJitter = (Math.random() - 0.5) * GAME_HEIGHT * (lane === "rear" ? 0.006 : 0.008);
-    sprite.y = yBase + yJitter;
-    sprite.x = startX ?? viewBounds.right + (lane === "rear" ? 160 : 140) + Math.random() * 110;
-    sprite.alpha = lane === "rear" ? 0.46 + Math.random() * 0.12 : 0.82 + Math.random() * 0.18;
+    if (this.isCompactView()) {
+      return 3;
+    }
 
-    const speedBase = lane === "rear" ? 0.24 : 0.42;
-    const speed = BASE_SPEED * (speedBase + Math.random() * 0.08);
-
-    (lane === "rear" ? this.rearDecorLayer : this.frontDecorLayer).addChild(sprite);
-    this.decors.push({ sprite, speed, lane });
+    return Math.max(4, Math.min(6, Math.round(viewBounds.width / 260)));
   }
 
-  private createTreeDecor(lane: "rear" | "front") {
+  private getFrontTreeTargetCount() {
+    if (this.isCompactView()) {
+      return 4;
+    }
+
+    return Math.max(4, Math.min(6, Math.round(viewBounds.width / 260)));
+  }
+
+  private getRearBushTargetCount() {
+    if (this.usesMinimalHorizonDecor()) {
+      return 0;
+    }
+
+    if (this.isCompactView()) {
+      return 2;
+    }
+
+    return Math.max(2, Math.min(4, this.getRearTreeTargetCount() - 1));
+  }
+
+  private getFrontBushTargetCount() {
+    if (this.isCompactView()) {
+      return 3;
+    }
+
+    return Math.max(3, Math.min(4, this.getFrontTreeTargetCount() - 1));
+  }
+
+  private getTreeRuntimeGap(lane: DecorLane) {
+    if (this.isCompactView()) {
+      return lane === "rear" ? 220 : 255;
+    }
+
+    return lane === "rear" ? 236 : 274;
+  }
+
+  private getBushRuntimeGap(lane: DecorLane) {
+    if (this.isCompactView()) {
+      return lane === "rear" ? 172 : 188;
+    }
+
+    return lane === "rear" ? 188 : 204;
+  }
+
+  private getBushSeedGap(lane: DecorLane) {
+    if (this.isCompactView()) {
+      return lane === "rear" ? 160 : 176;
+    }
+
+    return lane === "rear" ? 148 : 170;
+  }
+
+  private getBushInset(lane: DecorLane, isInitialSeed: boolean) {
+    if (this.isCompactView()) {
+      if (lane === "rear") {
+        return isInitialSeed ? 62 : 84;
+      }
+
+      return isInitialSeed ? 78 : 108;
+    }
+
+    if (lane === "rear") {
+      return isInitialSeed ? 70 : 94;
+    }
+
+    return isInitialSeed ? 90 : 116;
+  }
+
+  private getBushCrossLaneGap(lane: DecorLane) {
+    if (this.isCompactView()) {
+      return lane === "rear" ? 64 : 78;
+    }
+
+    return lane === "rear" ? 78 : 92;
+  }
+
+  private getBushSpawnLead(lane: DecorLane) {
+    if (this.isCompactView()) {
+      return lane === "rear" ? 56 : 84;
+    }
+
+    return lane === "rear" ? 64 : 96;
+  }
+
+  private getTreeCoverageLead(lane: DecorLane) {
+    return this.getTreeRuntimeGap(lane) + (lane === "rear" ? 72 : 120);
+  }
+
+  private buildLanePositions(
+    count: number,
+    startInset: number,
+    endInset: number,
+    offsets: number[],
+    minGap: number
+  ) {
+    if (count <= 0) {
+      return [];
+    }
+
+    if (count <= 1) {
+      return [viewBounds.left + startInset];
+    }
+
+    const positions: number[] = [];
+    const usableWidth = Math.max(0, viewBounds.width - startInset - endInset);
+    const baseStep = usableWidth / (count - 1);
+
+    for (let index = 0; index < count; index++) {
+      const baseX = viewBounds.left + startInset + baseStep * index;
+      const offset = offsets[index % offsets.length];
+      const candidateX = baseX + offset;
+      const minX = index === 0 ? viewBounds.left + startInset : positions[index - 1] + minGap;
+      const maxX = viewBounds.right - endInset - baseStep * (count - 1 - index);
+      positions.push(Math.max(minX, Math.min(maxX, candidateX)));
+    }
+
+    return positions;
+  }
+
+  private pickSeedGapIndexes(gapCount: number, desiredCount: number) {
+    if (gapCount <= 0 || desiredCount <= 0) {
+      return [];
+    }
+
+    if (desiredCount >= gapCount) {
+      return Array.from({ length: gapCount }, (_, index) => index);
+    }
+
+    const picked = new Set<number>();
+    for (let index = 0; index < desiredCount; index++) {
+      const ratio = desiredCount === 1 ? 0.5 : index / (desiredCount - 1);
+      const rawIndex = Math.round(ratio * (gapCount - 1));
+      let candidate = rawIndex;
+
+      while (picked.has(candidate) && candidate < gapCount - 1) {
+        candidate += 1;
+      }
+
+      while (picked.has(candidate) && candidate > 0) {
+        candidate -= 1;
+      }
+
+      picked.add(candidate);
+    }
+
+    return [...picked].sort((left, right) => left - right);
+  }
+
+  private spawnTree(lane: DecorLane, startX?: number) {
+    const decor = this.createTreeDecor(lane);
+    const sprite = decor.sprite;
+
+    const compact = this.isCompactView();
+    const yBase = compact
+      ? lane === "rear"
+        ? GAME_HEIGHT * 0.506
+        : GAME_HEIGHT * 0.558
+      : lane === "rear"
+        ? GAME_HEIGHT * 0.51
+        : GAME_HEIGHT * 0.562;
+    const yJitter = (Math.random() - 0.5) * GAME_HEIGHT * (compact ? (lane === "rear" ? 0.0012 : 0.0015) : lane === "rear" ? 0.004 : 0.005);
+    sprite.y = yBase + yJitter;
+    sprite.x = startX ?? this.resolveTreeSpawnX(lane);
+    sprite.alpha = lane === "rear" ? 0.48 + Math.random() * 0.08 : 0.82 + Math.random() * 0.1;
+
+    const speed = lane === "rear" ? this.rearDecorSpeed : this.frontDecorSpeed;
+
+    (lane === "rear" ? this.rearDecorLayer : this.frontDecorLayer).addChild(sprite);
+    const treeDecor = { sprite, speed, lane, role: "tree" as const, kind: decor.kind };
+    this.decors.push(treeDecor);
+    return treeDecor;
+  }
+
+  private spawnBush(lane: DecorLane, startX: number) {
+    const decor = this.createBushDecor(lane);
+    const sprite = decor.sprite;
+
+    const compact = this.isCompactView();
+    sprite.y =
+      (lane === "rear" ? GAME_HEIGHT * 0.532 : GAME_HEIGHT * 0.58) +
+      (Math.random() - 0.5) * GAME_HEIGHT * (compact ? (lane === "rear" ? 0.0009 : 0.0011) : lane === "rear" ? 0.003 : 0.0035);
+    sprite.x = startX;
+    sprite.alpha = lane === "rear" ? 0.42 + Math.random() * 0.08 : 0.86 + Math.random() * 0.08;
+
+    (lane === "rear" ? this.rearDecorLayer : this.frontDecorLayer).addChild(sprite);
+    const bushDecor = {
+      sprite,
+      speed: lane === "rear" ? this.rearDecorSpeed : this.frontDecorSpeed,
+      lane,
+      role: "bush" as const,
+      kind: decor.kind,
+    };
+    this.decors.push(bushDecor);
+    return bushDecor;
+  }
+
+  private spawnBushBetweenTrees(
+    lane: DecorLane,
+    leftTreeX: number,
+    rightTreeX: number,
+    isInitialSeed = false
+  ) {
+    const gap = rightTreeX - leftTreeX;
+    const minimumGap = isInitialSeed ? this.getBushSeedGap(lane) : this.getBushRuntimeGap(lane);
+    if (gap < minimumGap) return;
+
+    const baseRatio = isInitialSeed
+      ? (lane === "rear" ? 0.38 : 0.62)
+      : lane === "rear"
+        ? 0.34 + Math.random() * 0.16
+        : 0.52 + Math.random() * 0.16;
+    const preferredX = leftTreeX + gap * baseRatio;
+    const jitter =
+      (Math.random() - 0.5) * (isInitialSeed ? (lane === "rear" ? 12 : 10) : (lane === "rear" ? 26 : 18));
+    const inset = this.getBushInset(lane, isInitialSeed);
+    const minX = leftTreeX + inset;
+    const maxX = rightTreeX - inset;
+    const initialBushX = Math.max(minX, Math.min(maxX, preferredX + jitter));
+    if (!isInitialSeed && initialBushX < viewBounds.right + this.getBushSpawnLead(lane)) {
+      return;
+    }
+    const bushX = this.offsetBushFromOtherLane(lane, initialBushX, minX, maxX);
+
+    this.spawnBush(lane, bushX);
+  }
+
+  private createTreeDecor(lane: DecorLane) {
+    const textureName = Math.random() < 0.5 ? "tree1" : "tree2";
+    const treeTexture = Assets.get(textureName) as Texture | undefined;
+
+    if (treeTexture) {
+      const sprite = new Sprite(treeTexture);
+      sprite.anchor.set(0.5, 1);
+
+      const compact = this.isCompactView();
+      const sizeTier = Math.floor(Math.random() * 4);
+      const targetHeight =
+        lane === "rear"
+          ? (compact ? 208 : 232) +
+            [0, 18, 40, 66][sizeTier] +
+            Math.random() * (compact ? 10 : 14)
+          : (compact ? 292 : 338) +
+            [0, 26, 56, 92][sizeTier] +
+            Math.random() * (compact ? 12 : 20);
+      const scaleY = targetHeight / treeTexture.height;
+      const scaleX = scaleY * (compact ? (lane === "rear" ? 0.78 : 0.74) : lane === "rear" ? 0.9 : 0.84);
+      sprite.scale.set(scaleX, scaleY);
+
+      return {
+        sprite,
+        kind: textureName,
+      };
+    }
+
     const tree = new Container();
     const trunk = new Graphics();
     const canopyBack = new Graphics();
@@ -225,7 +576,144 @@ export class Background {
     canopyFront.fill({ color: canopyFrontColor });
 
     tree.addChild(trunk, canopyBack, canopyFront);
-    return tree;
+    return {
+      sprite: tree,
+      kind: "procedural_tree",
+    };
+  }
+
+  private createBushDecor(lane: DecorLane) {
+    const textureName = Math.random() < 0.5 ? "bushPremium1" : "bushPremium2";
+    const bushTexture =
+      (Assets.get(textureName) as Texture | undefined) ||
+      (Assets.get("bush1") as Texture | undefined) ||
+      (Assets.get("bush2") as Texture | undefined) ||
+      (Assets.get("bush3") as Texture | undefined);
+
+    if (bushTexture) {
+      const sprite = new Sprite(bushTexture);
+      sprite.anchor.set(0.5, 1);
+
+      const compact = this.isCompactView();
+      const targetHeight =
+        lane === "rear"
+          ? (compact ? 92 : 98) + Math.random() * (compact ? 22 : 32)
+          : (compact ? 132 : 148) + Math.random() * (compact ? 34 : 48);
+      const scaleY = targetHeight / bushTexture.height;
+      const scaleX = scaleY * (compact ? (lane === "rear" ? 0.82 : 0.78) : lane === "rear" ? 0.92 : 0.86);
+      sprite.scale.set(scaleX, scaleY);
+
+      return {
+        sprite,
+        kind: textureName,
+      };
+    }
+
+    const bush = new Graphics();
+    bush.ellipse(0, -32, 62, 34);
+    bush.fill({ color: 0x3d9b3d });
+    bush.ellipse(-28, -18, 38, 26);
+    bush.ellipse(28, -18, 40, 28);
+    bush.fill({ color: 0x63c552 });
+    bush.ellipse(0, -8, 72, 18);
+    bush.fill({ color: 0x2f7a2c });
+
+    return {
+      sprite: bush,
+      kind: "procedural_bush",
+    };
+  }
+
+  private countDecors(role: DecorRole, lane?: DecorLane) {
+    return this.decors.filter((decor) => decor.role === role && (lane ? decor.lane === lane : true)).length;
+  }
+
+  private getLaneRoleXs(role: DecorRole, lane: DecorLane) {
+    return this.decors
+      .filter((decor) => decor.role === role && decor.lane === lane)
+      .map((decor) => decor.sprite.x);
+  }
+
+  private getSortedLaneRoleXs(role: DecorRole, lane: DecorLane) {
+    return this.getLaneRoleXs(role, lane).sort((left, right) => left - right);
+  }
+
+  private offsetBushFromOtherLane(lane: DecorLane, preferredX: number, minX: number, maxX: number) {
+    const otherLane = lane === "rear" ? "front" : "rear";
+    const minimumCrossLaneGap = this.getBushCrossLaneGap(lane);
+    const otherBushXs = this.getLaneRoleXs("bush", otherLane);
+
+    if (otherBushXs.length === 0) {
+      return preferredX;
+    }
+
+    const attempts = [
+      preferredX,
+      preferredX - minimumCrossLaneGap,
+      preferredX + minimumCrossLaneGap,
+      preferredX - minimumCrossLaneGap * 1.4,
+      preferredX + minimumCrossLaneGap * 1.4,
+      minX,
+      maxX,
+    ];
+
+    for (const candidate of attempts) {
+      if (candidate < minX || candidate > maxX) {
+        continue;
+      }
+
+      if (otherBushXs.every((x) => Math.abs(x - candidate) >= minimumCrossLaneGap)) {
+        return candidate;
+      }
+    }
+
+    return preferredX;
+  }
+
+  private getRightmostLaneRoleX(role: DecorRole, lane: DecorLane) {
+    const laneXs = this.getLaneRoleXs(role, lane);
+    if (laneXs.length === 0) {
+      return null;
+    }
+
+    return Math.max(...laneXs);
+  }
+
+  private fillTreeLane(lane: DecorLane) {
+    if (lane === "rear" && this.usesMinimalHorizonDecor()) {
+      return;
+    }
+
+    let guard = 0;
+    while (guard < 4) {
+      const rightmostTreeX = this.getRightmostLaneRoleX("tree", lane);
+      if (rightmostTreeX !== null && rightmostTreeX >= viewBounds.right + this.getTreeCoverageLead(lane)) {
+        return;
+      }
+
+      const newTree = this.spawnTree(lane);
+      if (rightmostTreeX !== null) {
+        this.spawnBushBetweenTrees(lane, rightmostTreeX, newTree.sprite.x);
+      }
+      guard += 1;
+    }
+  }
+
+  private resolveTreeSpawnX(lane: DecorLane) {
+    const baseSpawnX =
+      viewBounds.right + (lane === "rear" ? 210 : 250) + Math.random() * (lane === "rear" ? 56 : 64);
+    const rightmostLaneX = this.getRightmostLaneRoleX("tree", lane);
+
+    if (rightmostLaneX === null) {
+      return baseSpawnX;
+    }
+
+    return Math.max(baseSpawnX, rightmostLaneX + this.getTreeRuntimeGap(lane));
+  }
+
+  private isDecorVisible(decor: SidewalkDecor) {
+    const bounds = decor.sprite.getBounds();
+    return bounds.x < viewBounds.right && bounds.x + bounds.width > viewBounds.left;
   }
 
   private updateDecor(dt: number) {
@@ -234,23 +722,18 @@ export class Background {
       d.sprite.x -= d.speed * dt;
 
       // Remove when off the left edge of visible area
-      if (d.sprite.x < viewBounds.left - 260) {
+      const despawnX =
+        d.role === "tree"
+          ? viewBounds.left - (d.lane === "rear" ? 250 : 220)
+          : viewBounds.left - (d.lane === "rear" ? 150 : 140);
+      if (d.sprite.x < despawnX) {
         (d.lane === "rear" ? this.rearDecorLayer : this.frontDecorLayer).removeChild(d.sprite);
         d.sprite.destroy();
         this.decors.splice(i, 1);
       }
     }
 
-    this.rearSpawnTimer -= dt;
-    if (this.rearSpawnTimer <= 0) {
-      this.spawnDecor("rear");
-      this.rearSpawnTimer = 1.45 + Math.random() * 0.55;
-    }
-
-    this.frontSpawnTimer -= dt;
-    if (this.frontSpawnTimer <= 0) {
-      this.spawnDecor("front");
-      this.frontSpawnTimer = 0.82 + Math.random() * 0.38;
-    }
+    this.fillTreeLane("rear");
+    this.fillTreeLane("front");
   }
 }

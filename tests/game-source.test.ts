@@ -48,8 +48,8 @@ describe("Game source regressions", () => {
     const levelPath = path.resolve(import.meta.dirname, "../src/Level.ts");
     const gamePath = path.resolve(import.meta.dirname, "../src/Game.ts");
 
-    expect(readFileSync(levelPath, "utf8")).toContain("const x = Math.max(viewBounds.right + 280, GAME_WIDTH + 360);");
-    expect(readFileSync(gamePath, "utf8")).toContain("const obstacleBounds = shrinkBounds(obstacle.getBounds(), 6);");
+    expect(readFileSync(levelPath, "utf8")).toContain("const x = spawnX ?? Math.max(viewBounds.right + 280, GAME_WIDTH + 360);");
+    expect(readFileSync(gamePath, "utf8")).toContain("const obstacleBounds = obstacle.getBounds();");
     expect(readFileSync(gamePath, "utf8")).toContain("if (intersects(playerBounds, obstacleBounds)) {");
   });
 

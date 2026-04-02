@@ -106,6 +106,21 @@ test("obstacle hit flow removes one life", async ({ page }) => {
     .toBe(2);
 });
 
+test("real cone collision removes one life", async ({ page }) => {
+  await page.goto(playableUrl);
+  await page.waitForSelector("canvas");
+  await page.waitForFunction(() => !!window.__PLAYABLE_TEST_API__);
+
+  await page.evaluate(() => {
+    window.__PLAYABLE_TEST_API__?.setState("playing");
+    window.__PLAYABLE_TEST_API__?.spawnObstacleCollision?.();
+  });
+
+  await expect
+    .poll(async () => page.evaluate(() => window.__PLAYABLE_TEST_API__?.snapshot().lives))
+    .toBe(2);
+});
+
 test("top hud keeps the sound button aligned with the paypal counter", async ({ page }) => {
   await page.goto(playableUrl);
   await page.waitForSelector("canvas");

@@ -14,6 +14,7 @@ export class LoseScreen {
   private buttonText: Text;
   private timer = 0;
   private countdownDanger = false;
+  private startedAtMs = 0;
 
   constructor(onRetry: () => void, getMoney: () => number) {
     this.container = new Container();
@@ -154,6 +155,7 @@ export class LoseScreen {
 
   play() {
     this.timer = 0;
+    this.startedAtMs = performance.now();
     this.container.visible = true;
     this.panel.visible = false;
     this.panel.alpha = 0;
@@ -172,9 +174,16 @@ export class LoseScreen {
   }
 
   update(dt: number) {
-    if (!this.container.visible) return;
-    const stableDt = Math.max(dt, 1 / 20);
-    this.timer += stableDt;
+    if (!this.container.visible) {
+      this.startedAtMs = 0;
+      return;
+    }
+
+    if (this.startedAtMs === 0) {
+      this.startedAtMs = performance.now();
+    }
+
+    this.timer = Math.max(0, (performance.now() - this.startedAtMs) / 1000);
 
     if (this.failSprite && this.timer < 0.45) {
       const t = Math.min(this.timer / 0.45, 1);
@@ -206,6 +215,7 @@ export class LoseScreen {
 
   debugSetTimer(seconds: number) {
     this.timer = Math.max(0, seconds);
+    this.startedAtMs = performance.now() - this.timer * 1000;
     this.panel.visible = this.timer >= 0.45;
     this.panel.alpha = this.panel.visible ? 1 : 0;
     if (this.failSprite) {
