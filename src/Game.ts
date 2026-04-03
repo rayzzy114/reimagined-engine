@@ -52,6 +52,7 @@ export class Game {
   private endZoomTimer = 0;
   private readonly endZoomDuration = 0.56;
   private readonly finishBreakLeadTime = 0.2;
+  private readonly finishBreakDistance = 0.22;
   private endZoomScale = 1;
   private isFinishBreakPending = false;
   private finishBreakTimer = 0;
@@ -145,6 +146,9 @@ export class Game {
   private setState(newState: GameState) {
     if (this.state === newState) return;
     const previousState = this.state;
+    this.winScreen.hide();
+    this.loseScreen.hide();
+    this.ctaScreen.hide();
     this.state = newState;
     this.isFinishBreakPending = false;
     this.finishBreakTimer = 0;
@@ -301,6 +305,13 @@ export class Game {
 
     this.finishRibbon.show();
     this.finishRibbon.setPosition(remainingDistance * GAME_WIDTH);
+
+    if (!this.isFinishBreakPending && remainingDistance <= this.finishBreakDistance) {
+      const playerBounds = this.player.getBounds();
+      this.finishRibbon.breakRibbon(playerBounds.y + playerBounds.height * 0.38);
+      this.isFinishBreakPending = true;
+      this.finishBreakTimer = this.finishBreakLeadTime;
+    }
   }
 
   private updateEndZoom(dt: number) {
@@ -384,11 +395,6 @@ export class Game {
 
     // Finish
     if (this.level.isFinishReached()) {
-      if (!this.isFinishBreakPending) {
-        this.finishRibbon.breakRibbon(playerBounds.y + playerBounds.height * 0.38);
-        this.isFinishBreakPending = true;
-        this.finishBreakTimer = this.finishBreakLeadTime;
-      }
       return;
     }
   }
