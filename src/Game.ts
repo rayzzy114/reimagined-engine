@@ -16,6 +16,7 @@ import { SoundManager } from "./utils/sounds";
 import { inflateBounds, intersects, isCollectibleCollected, shrinkBounds } from "./utils/collision";
 import { shouldShowHudFooter } from "./utils/uiState";
 import { ParticleSystem } from "./ParticleSystem";
+import { ComboSystem } from "./effects/ComboSystem";
 
 export enum GameState {
   START = "start",
@@ -37,6 +38,7 @@ export class Game {
   private player!: Player;
   private level!: Level;
   private particles!: ParticleSystem;
+  private comboSystem!: ComboSystem;
   private hud!: HUD;
   private finishRibbon!: FinishRibbon;
   private praisePopup!: PraisePopup;
@@ -92,6 +94,9 @@ export class Game {
 
     this.particles = new ParticleSystem();
     this.gameContainer.addChild(this.particles.container);
+
+    this.comboSystem = new ComboSystem();
+    this.uiContainer.addChild(this.comboSystem.container);
 
     this.gameContainer.addChild(this.finishRibbon.frontContainer);
 
@@ -239,6 +244,7 @@ export class Game {
     this.tutorialOverlay.update(dt);
     this.hud.update(dt);
     this.particles.update(dt);
+    this.comboSystem.update(dt);
     this.finishRibbon.update(dt);
     this.updateEndZoom(dt);
 
@@ -392,6 +398,8 @@ export class Game {
     if (!this.isInvincible) {
       this.checkNearMisses(playerBounds, playerFeetBounds);
     }
+
+    this.checkMissedCoins();
 
     // Finish
     if (this.level.isFinishReached()) {
@@ -634,9 +642,12 @@ export class Game {
   }
 
   private collectPickupReward(x: number, y: number) {
-    this.money += COLLECTIBLE_VALUE;
+    const multiplier = this.comboSystem.onCoinCollect();
+    const reward = COLLECTIBLE_VALUE * multiplier;
+    this.money += reward;
     this.collectCount++;
     this.hud.updateMoney(this.money);
+    this.background.pulse();
     this.sounds.playCollect();
     this.particles.burstCollect(x, y);
     this.hud.spawnRewardFly(this.resolveRewardFlyTexture(false), x, y, "cash", () =>
@@ -647,6 +658,16 @@ export class Game {
       const phrase = PRAISE_PHRASES[this.praiseIndex % PRAISE_PHRASES.length];
       this.praisePopup.show(phrase, x, y - 50);
       this.praiseIndex++;
+    }
+  }
+
+  private checkMissedCoins() {
+    const playerX = GAME_WIDTH * 0.18;
+    for (const collectible of this.level.getActiveCollectibles()) {
+      if (collectible.x < playerX - 100 && !collectible.collected) {
+        collectible.collect();
+        this.comboSystem.onCoinMissed();
+      }
     }
   }
 }

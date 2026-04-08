@@ -29,6 +29,8 @@ export class Background {
   private frontDecorLayer: Container;
   private decors: SidewalkDecor[] = [];
   private elapsed = 0;
+  private pulseTimer = 0;
+  private pulseIntensity = 0;
 
   constructor() {
     this.container = new Container();
@@ -55,6 +57,11 @@ export class Background {
 
     // Seed initial decorations so sidewalk isn't empty at start
     this.seedInitialDecor();
+  }
+
+  pulse() {
+    this.pulseTimer = 0.3;
+    this.pulseIntensity = 0.02;
   }
 
   onResize() {
@@ -121,6 +128,16 @@ export class Background {
       const scaledWidth = bgTex.width * scaleH;
       const visibleCenterX = (viewBounds.left + viewBounds.right) / 2;
       this.bgSprite.x = visibleCenterX - scaledWidth / 2 + Math.sin(this.elapsed * 0.2) * 6;
+    }
+
+    // Background pulse
+    if (this.pulseTimer > 0) {
+      this.pulseTimer -= dt;
+      const progress = 1 - (this.pulseTimer / 0.3);
+      const scale = 1 + this.pulseIntensity * Math.sin(progress * Math.PI);
+      this.container.scale.set(scale);
+    } else {
+      this.container.scale.set(1);
     }
 
     this.stripeOffset = (this.stripeOffset + dt * this.stripeSpeed) % this.stripeSpacing;
