@@ -83,17 +83,17 @@ export class Game {
     this.background = new Background();
     this.gameContainer.addChild(this.background.container);
 
+    this.particles = new ParticleSystem();
+    this.gameContainer.addChild(this.particles.container);
+
     this.finishRibbon = new FinishRibbon();
     this.gameContainer.addChild(this.finishRibbon.backContainer);
 
-    this.player = new Player();
+    this.player = new Player(this.particles);
     this.gameContainer.addChild(this.player.shadow);
     this.gameContainer.addChild(this.player.container);
 
     this.level = new Level(this.gameContainer);
-
-    this.particles = new ParticleSystem();
-    this.gameContainer.addChild(this.particles.container);
 
     this.comboSystem = new ComboSystem();
     this.uiContainer.addChild(this.comboSystem.container);
@@ -263,6 +263,13 @@ export class Game {
     this.background.update(dt);
 
     this.player.update(dt);
+
+    // Coin magnetism — feed player position to Level
+    const playerBounds = this.player.getBounds();
+    this.level.setMagnetismTarget(
+      playerBounds.x + playerBounds.width / 2,
+      playerBounds.y + playerBounds.height / 2
+    );
     this.level.update(dt);
     this.updateFinishLine();
 

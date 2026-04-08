@@ -1,6 +1,7 @@
 import { Container, AnimatedSprite, Graphics, Texture } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X_RATIO, JUMP_HEIGHT, JUMP_DURATION, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
 import { getRunnerSpritesheet } from "./utils/assets";
+import { ParticleSystem } from "./ParticleSystem";
 
 export class Player {
   private readonly baseScale = 0.54;
@@ -16,8 +17,10 @@ export class Player {
   private invincible = false;
   private blinkTimer = 0;
   private landSquashTimer = 0;
+  private particles: ParticleSystem;
 
-  constructor() {
+  constructor(particles: ParticleSystem) {
+    this.particles = particles;
     this.container = new Container();
     this.groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
 
@@ -101,9 +104,16 @@ export class Player {
 
   jump() {
     if (this.jumping) return;
-    this.jumping = true;
-    this.jumpProgress = 0;
-    this.switchAnim(this.jumpAnim);
+
+    // Anticipation: crouch before jump
+    this.setVisualScale(1.08, 0.92);
+    setTimeout(() => {
+      if (!this.jumping) {
+        this.jumping = true;
+        this.jumpProgress = 0;
+        this.switchAnim(this.jumpAnim);
+      }
+    }, 80);
   }
 
   playHurt() {
@@ -125,6 +135,7 @@ export class Player {
         this.jumping = false;
         this.container.y = this.groundY;
         this.landSquashTimer = 0.12;
+        this.particles.burstHit(this.container.x, this.groundY);
         this.switchAnim(this.runAnim);
       } else {
         this.container.y = this.groundY - JUMP_HEIGHT * Math.sin(Math.PI * this.jumpProgress);
