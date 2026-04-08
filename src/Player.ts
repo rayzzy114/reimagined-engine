@@ -17,6 +17,8 @@ export class Player {
   private invincible = false;
   private blinkTimer = 0;
   private landSquashTimer = 0;
+  private anticipationTimer = 0;
+  private readonly anticipationDuration = 0.08;
   private particles: ParticleSystem;
 
   constructor(particles: ParticleSystem) {
@@ -105,18 +107,13 @@ export class Player {
   jump() {
     if (this.jumping) return;
 
-    // Anticipation: crouch before jump
+    // Start anticipation animation before jumping
+    this.anticipationTimer = this.anticipationDuration;
     this.setVisualScale(1.08, 0.92);
-    setTimeout(() => {
-      if (!this.jumping) {
-        this.jumping = true;
-        this.jumpProgress = 0;
-        this.switchAnim(this.jumpAnim);
-      }
-    }, 80);
   }
 
   playHurt() {
+    this.anticipationTimer = 0;
     this.switchAnim(this.hurtAnim);
     this.hurtAnim.onComplete = () => {
       if (this.jumping) {
@@ -128,6 +125,19 @@ export class Player {
   }
 
   update(dt: number) {
+    // Handle anticipation timer - trigger jump when it expires
+    if (this.anticipationTimer > 0) {
+      this.anticipationTimer -= dt;
+      if (this.anticipationTimer <= 0) {
+        this.anticipationTimer = 0;
+        if (!this.jumping) {
+          this.jumping = true;
+          this.jumpProgress = 0;
+          this.switchAnim(this.jumpAnim);
+        }
+      }
+    }
+
     if (this.jumping) {
       this.jumpProgress += (dt * 1000) / JUMP_DURATION;
       if (this.jumpProgress >= 1) {
