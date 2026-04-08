@@ -16,6 +16,7 @@ import { SoundManager } from "./utils/sounds";
 import { inflateBounds, intersects, isCollectibleCollected, shrinkBounds } from "./utils/collision";
 import { shouldShowHudFooter } from "./utils/uiState";
 import { ParticleSystem } from "./ParticleSystem";
+import { ComboSystem } from "./effects/ComboSystem";
 
 export enum GameState {
   START = "start",
@@ -37,6 +38,7 @@ export class Game {
   private player!: Player;
   private level!: Level;
   private particles!: ParticleSystem;
+  private comboSystem!: ComboSystem;
   private hud!: HUD;
   private finishRibbon!: FinishRibbon;
   private praisePopup!: PraisePopup;
@@ -52,6 +54,7 @@ export class Game {
   private endZoomTimer = 0;
   private readonly endZoomDuration = 0.56;
   private readonly finishBreakLeadTime = 0.2;
+  private readonly finishBreakDistance = 0.22;
   private endZoomScale = 1;
   private isFinishBreakPending = false;
   private finishBreakTimer = 0;
@@ -80,17 +83,20 @@ export class Game {
     this.background = new Background();
     this.gameContainer.addChild(this.background.container);
 
+    this.particles = new ParticleSystem();
+    this.gameContainer.addChild(this.particles.container);
+
     this.finishRibbon = new FinishRibbon();
     this.gameContainer.addChild(this.finishRibbon.backContainer);
 
-    this.player = new Player();
+    this.player = new Player(this.particles);
     this.gameContainer.addChild(this.player.shadow);
     this.gameContainer.addChild(this.player.container);
 
     this.level = new Level(this.gameContainer);
 
-    this.particles = new ParticleSystem();
-    this.gameContainer.addChild(this.particles.container);
+    this.comboSystem = new ComboSystem();
+    this.uiContainer.addChild(this.comboSystem.container);
 
     this.gameContainer.addChild(this.finishRibbon.frontContainer);
 
@@ -145,6 +151,9 @@ export class Game {
   private setState(newState: GameState) {
     if (this.state === newState) return;
     const previousState = this.state;
+    this.winScreen.hide();
+    this.loseScreen.hide();
+    this.ctaScreen.hide();
     this.state = newState;
     this.isFinishBreakPending = false;
     this.finishBreakTimer = 0;
@@ -235,6 +244,7 @@ export class Game {
     this.tutorialOverlay.update(dt);
     this.hud.update(dt);
     this.particles.update(dt);
+    this.comboSystem.update(dt);
     this.finishRibbon.update(dt);
     this.updateEndZoom(dt);
 
@@ -253,6 +263,13 @@ export class Game {
     this.background.update(dt);
 
     this.player.update(dt);
+
+    // Coin magnetism — feed player position to Level
+    const playerBounds = this.player.getBounds();
+    this.level.setMagnetismTarget(
+      playerBounds.x + playerBounds.width / 2,
+      playerBounds.y + playerBounds.height / 2
+    );
     this.level.update(dt);
     this.updateFinishLine();
 
@@ -301,6 +318,13 @@ export class Game {
 
     this.finishRibbon.show();
     this.finishRibbon.setPosition(remainingDistance * GAME_WIDTH);
+
+    if (!this.isFinishBreakPending && remainingDistance <= this.finishBreakDistance) {
+      const playerBounds = this.player.getBounds();
+      this.finishRibbon.breakRibbon(playerBounds.y + playerBounds.height * 0.38);
+      this.isFinishBreakPending = true;
+      this.finishBreakTimer = this.finishBreakLeadTime;
+    }
   }
 
   private updateEndZoom(dt: number) {
@@ -382,13 +406,10 @@ export class Game {
       this.checkNearMisses(playerBounds, playerFeetBounds);
     }
 
+    this.checkMissedCoins();
+
     // Finish
     if (this.level.isFinishReached()) {
-      if (!this.isFinishBreakPending) {
-        this.finishRibbon.breakRibbon(playerBounds.y + playerBounds.height * 0.38);
-        this.isFinishBreakPending = true;
-        this.finishBreakTimer = this.finishBreakLeadTime;
-      }
       return;
     }
   }
@@ -628,9 +649,12 @@ export class Game {
   }
 
   private collectPickupReward(x: number, y: number) {
-    this.money += COLLECTIBLE_VALUE;
+    const multiplier = this.comboSystem.onCoinCollect();
+    const reward = COLLECTIBLE_VALUE * multiplier;
+    this.money += reward;
     this.collectCount++;
     this.hud.updateMoney(this.money);
+    this.background.pulse();
     this.sounds.playCollect();
     this.particles.burstCollect(x, y);
     this.hud.spawnRewardFly(this.resolveRewardFlyTexture(false), x, y, "cash", () =>
@@ -641,6 +665,16 @@ export class Game {
       const phrase = PRAISE_PHRASES[this.praiseIndex % PRAISE_PHRASES.length];
       this.praisePopup.show(phrase, x, y - 50);
       this.praiseIndex++;
+    }
+  }
+
+  private checkMissedCoins() {
+    const playerX = GAME_WIDTH * 0.18;
+    for (const collectible of this.level.getActiveCollectibles()) {
+      if (collectible.x < playerX - 100 && !collectible.collected) {
+        collectible.collect();
+        this.comboSystem.onCoinMissed();
+      }
     }
   }
 }

@@ -1,6 +1,7 @@
-import { Container, AnimatedSprite, Graphics, Texture, Color } from "pixi.js";
+import { Container, AnimatedSprite, Graphics, Texture } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, PLAYER_X_RATIO, JUMP_HEIGHT, JUMP_DURATION, PLAYER_GROUND_Y_RATIO } from "./utils/constants";
-import { getRunnerSpritesheet, type RunnerSkinId } from "./utils/assets";
+import { getRunnerSpritesheet } from "./utils/assets";
+import { ParticleSystem } from "./ParticleSystem";
 
 export class Player {
   private readonly baseScale = 0.54;
@@ -16,17 +17,21 @@ export class Player {
   private invincible = false;
   private blinkTimer = 0;
   private landSquashTimer = 0;
+  private anticipationTimer = 0;
+  private readonly anticipationDuration = 0.08;
+  private particles: ParticleSystem;
 
-  constructor() {
+  constructor(particles: ParticleSystem) {
+    this.particles = particles;
     this.container = new Container();
     this.groundY = GAME_HEIGHT * PLAYER_GROUND_Y_RATIO;
 
     // Ground shadow (rendered separately, stays on ground)
     this.shadow = new Graphics();
-    this.shadow.ellipse(0, 0, 38, 10);
+    this.shadow.ellipse(0, 0, 36, 9);
     this.shadow.fill({ color: 0x000000, alpha: 0.22 });
     this.shadow.x = GAME_WIDTH * PLAYER_X_RATIO;
-    this.shadow.y = this.groundY + 4;
+    this.shadow.y = this.groundY + 2;
 
     const runnerSpritesheet = getRunnerSpritesheet();
     const runFrames = runnerSpritesheet.animations["run"];
@@ -37,18 +42,24 @@ export class Player {
     this.runAnim.anchor.set(0.5, 1);
     this.runAnim.animationSpeed = 0.15;
     this.runAnim.play();
+    this.bindFrameOffsets(this.runAnim);
+    this.updateFrameOffset(this.runAnim);
 
     this.jumpAnim = new AnimatedSprite(jumpFrames);
     this.jumpAnim.anchor.set(0.5, 1);
     this.jumpAnim.animationSpeed = 0.225;
     this.jumpAnim.loop = false;
     this.jumpAnim.visible = false;
+    this.bindFrameOffsets(this.jumpAnim);
+    this.updateFrameOffset(this.jumpAnim);
 
     this.hurtAnim = new AnimatedSprite(hurtFrames);
     this.hurtAnim.anchor.set(0.5, 1);
     this.hurtAnim.animationSpeed = 0.30;
     this.hurtAnim.loop = false;
     this.hurtAnim.visible = false;
+    this.bindFrameOffsets(this.hurtAnim);
+    this.updateFrameOffset(this.hurtAnim);
 
     this.container.addChild(this.runAnim);
     this.container.addChild(this.jumpAnim);
@@ -65,19 +76,21 @@ export class Player {
     this.container.scale.set(this.baseScale * scaleX, this.baseScale * scaleY);
   }
 
-  private applySkinTextures() {
-    const spritesheet = getRunnerSpritesheet();
-    this.runAnim.textures = spritesheet.animations["run"];
-    this.jumpAnim.textures = spritesheet.animations["jump"];
-    this.hurtAnim.textures = spritesheet.animations["hurt"];
+  private bindFrameOffsets(anim: AnimatedSprite) {
+    anim.onFrameChange = () => {
+      this.updateFrameOffset(anim);
+    };
+  }
 
-    if (this.currentAnim === this.runAnim) {
-      this.runAnim.gotoAndPlay(0);
-    } else if (this.currentAnim === this.jumpAnim) {
-      this.jumpAnim.gotoAndPlay(0);
-    } else {
-      this.hurtAnim.gotoAndPlay(0);
-    }
+  private updateFrameOffset(anim: AnimatedSprite) {
+    const texture = anim.textures[anim.currentFrame] as Texture | undefined;
+    if (!texture) return;
+
+    const origHeight = texture.orig?.height ?? texture.height;
+    const trimY = texture.trim?.y ?? 0;
+    const trimHeight = texture.trim?.height ?? texture.height;
+    const bottomGap = Math.max(0, origHeight - (trimY + trimHeight));
+    anim.y = bottomGap;
   }
 
   private switchAnim(anim: AnimatedSprite) {
@@ -88,16 +101,19 @@ export class Player {
     this.currentAnim = anim;
     this.currentAnim.visible = true;
     this.currentAnim.gotoAndPlay(0);
+    this.updateFrameOffset(this.currentAnim);
   }
 
   jump() {
     if (this.jumping) return;
-    this.jumping = true;
-    this.jumpProgress = 0;
-    this.switchAnim(this.jumpAnim);
+
+    // Start anticipation animation before jumping
+    this.anticipationTimer = this.anticipationDuration;
+    this.setVisualScale(1.08, 0.92);
   }
 
   playHurt() {
+    this.anticipationTimer = 0;
     this.switchAnim(this.hurtAnim);
     this.hurtAnim.onComplete = () => {
       if (this.jumping) {
@@ -109,6 +125,19 @@ export class Player {
   }
 
   update(dt: number) {
+    // Handle anticipation timer - trigger jump when it expires
+    if (this.anticipationTimer > 0) {
+      this.anticipationTimer -= dt;
+      if (this.anticipationTimer <= 0) {
+        this.anticipationTimer = 0;
+        if (!this.jumping) {
+          this.jumping = true;
+          this.jumpProgress = 0;
+          this.switchAnim(this.jumpAnim);
+        }
+      }
+    }
+
     if (this.jumping) {
       this.jumpProgress += (dt * 1000) / JUMP_DURATION;
       if (this.jumpProgress >= 1) {
@@ -116,6 +145,7 @@ export class Player {
         this.jumping = false;
         this.container.y = this.groundY;
         this.landSquashTimer = 0.12;
+        this.particles.burstHit(this.container.x, this.groundY);
         this.switchAnim(this.runAnim);
       } else {
         this.container.y = this.groundY - JUMP_HEIGHT * Math.sin(Math.PI * this.jumpProgress);

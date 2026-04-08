@@ -1,3 +1,4 @@
+import gsap from "gsap";
 import { Assets, Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, viewBounds } from "../utils/constants";
 
@@ -15,6 +16,7 @@ export class LoseScreen {
   private timer = 0;
   private countdownDanger = false;
   private startedAtMs = 0;
+  private timeline?: gsap.core.Timeline;
 
   constructor(onRetry: () => void, getMoney: () => number) {
     this.container = new Container();
@@ -154,15 +156,20 @@ export class LoseScreen {
   }
 
   play() {
+    this.hide();
     this.timer = 0;
     this.startedAtMs = performance.now();
     this.container.visible = true;
-    this.panel.visible = false;
-    this.panel.alpha = 0;
+    this.container.alpha = 0;
+    this.panel.visible = true;
+    this.panel.alpha = 1;
+    this.panel.scale.set(0.92);
+    this.panel.x = GAME_WIDTH * 0.03;
+    this.panel.y = GAME_HEIGHT * 0.02;
     if (this.failSprite) {
       this.failSprite.visible = true;
       this.failSprite.alpha = 1;
-      this.failSprite.scale.set(0);
+      this.failSprite.scale.set(0.02);
       this.failSprite.rotation = 0;
     }
     this.countdownText.text = `00:${String(LoseScreen.COUNTDOWN_SECONDS).padStart(2, "0")}`;
@@ -170,7 +177,38 @@ export class LoseScreen {
     this.countdownDanger = false;
     this.countdownText.style.fill = 0xffffff;
     this.countdownText.scale.set(1);
-    this.buttonContainer.scale.set(1);
+    this.buttonContainer.scale.set(0.94);
+
+    this.timeline = gsap.timeline();
+    this.timeline.to(this.container, { alpha: 1, duration: 0.22, ease: "power1.out" }, 0);
+    if (this.failSprite) {
+      this.timeline.to(
+        this.failSprite.scale,
+        { x: 1, y: 1, duration: 0.7, ease: "back.out(1.5)" },
+        0.08
+      );
+      this.timeline.to(
+        this.failSprite,
+        { rotation: 0.02, yoyo: true, repeat: 1, duration: 0.18, ease: "sine.inOut" },
+        0.08
+      );
+    }
+    this.timeline.to(this.panel, { x: 0, y: 0, duration: 0.45, ease: "back.out(1.7)" }, 0.14);
+    this.timeline.to(
+      this.panel.scale,
+      { x: 1, y: 1, duration: 0.7, ease: "back.out(1.5)" },
+      0.14
+    );
+    this.timeline.to(
+      this.buttonContainer.scale,
+      { x: 1, y: 1, duration: 0.45, ease: "back.out(1.7)" },
+      0.28
+    );
+    this.timeline.to(
+      this.buttonContainer.scale,
+      { x: 1.04, y: 1.04, duration: 1.2, yoyo: true, repeat: -1, ease: "sine.inOut" },
+      0.82
+    );
   }
 
   update(dt: number) {
@@ -185,23 +223,8 @@ export class LoseScreen {
 
     this.timer = Math.max(0, (performance.now() - this.startedAtMs) / 1000);
 
-    if (this.failSprite && this.timer < 0.45) {
-      const t = Math.min(this.timer / 0.45, 1);
-      this.failSprite.scale.set(0.02 + t * 0.98);
-      this.failSprite.rotation = Math.sin(t * Math.PI) * 0.02;
-    }
-
-    if (this.timer >= 0.45) {
-      const fade = Math.min((this.timer - 0.45) / 0.35, 1);
-      this.panel.visible = true;
-      this.panel.alpha = fade;
-      if (this.failSprite) this.failSprite.alpha = 1 - fade;
-    }
-
     const secondsLeft = Math.max(0, LoseScreen.COUNTDOWN_SECONDS - Math.floor(this.timer));
     this.countdownText.text = `00:${String(secondsLeft).padStart(2, "0")}`;
-    const buttonScale = 1.08 + Math.sin(this.timer * 6.1) * 0.035;
-    this.buttonContainer.scale.set(buttonScale);
     this.countdownDanger = secondsLeft < 10;
     if (this.countdownDanger) {
       const pulse = Math.sin(this.timer * 9.4) * 0.5 + 0.5;
@@ -222,6 +245,30 @@ export class LoseScreen {
       this.failSprite.alpha = this.panel.visible ? 0 : 1;
     }
     this.update(0);
+  }
+
+  hide() {
+    this.timeline?.kill();
+    this.timeline = undefined;
+
+    this.container.visible = false;
+    this.container.alpha = 1;
+
+    this.panel.visible = false;
+    this.panel.alpha = 1;
+    this.panel.scale.set(1);
+    this.panel.x = 0;
+    this.panel.y = 0;
+
+    if (this.failSprite) {
+      this.failSprite.visible = true;
+      this.failSprite.alpha = 1;
+      this.failSprite.scale.set(1);
+      this.failSprite.rotation = 0;
+    }
+
+    this.buttonContainer.scale.set(1);
+    this.startedAtMs = 0;
   }
 
   getDebugMeta() {

@@ -34,6 +34,7 @@ export class Level {
   private readonly tutorialDistance = 3;
   private elapsed = 0;
   private jackpotTotalCount = LEVEL_DATA.filter((item) => item.flags?.includes(EntityFlag.JACKPOT)).length;
+  private magnetismTarget: { x: number; y: number } | null = null;
 
   constructor(gameContainer: Container) {
     this.gameContainer = gameContainer;
@@ -95,10 +96,22 @@ export class Level {
         entity.glow.alpha = (Math.sin(this.elapsed * 10 + entity.x * 0.05) * 0.2 + 0.6) * 0.8;
       }
 
-      // Collectible bobbing
+          // Collectible bobbing
       if (entity.type === EntityType.COLLECTIBLE && !entity.collected) {
         entity.mainSprite.y = Math.sin(this.elapsed * 5 + entity.x * 0.03) * 5;
         entity.mainSprite.rotation = Math.sin(this.elapsed * 3 + entity.x * 0.02) * 0.1;
+      }
+
+      // Coin magnetism — pull toward player position
+      if (entity.type === EntityType.COLLECTIBLE && !entity.collected && this.magnetismTarget) {
+        const dx = this.magnetismTarget.x - entity.x;
+        const dy = this.magnetismTarget.y - entity.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120 && dist > 1) {
+          const pullStrength = (120 - dist) / 120;
+          entity.x += dx * pullStrength * dt * 4;
+          entity.y += dy * pullStrength * dt * 4;
+        }
       }
 
       // Off-screen removal — only despawn after the full sprite has cleared the visible area
@@ -130,6 +143,10 @@ export class Level {
     if (this.currentDistance > this.tutorialDistance) {
       this.tutorialTriggered = true;
     }
+  }
+
+  setMagnetismTarget(x: number, y: number) {
+    this.magnetismTarget = { x, y };
   }
 
   private spawnEntity(item: LevelItem, spawnX?: number) {

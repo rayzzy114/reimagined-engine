@@ -1,3 +1,4 @@
+import gsap from "gsap";
 import { Assets, Container, Graphics, Sprite, Text, TextStyle, Texture } from "pixi.js";
 import { GAME_WIDTH, GAME_HEIGHT, viewBounds } from "../utils/constants";
 
@@ -12,6 +13,7 @@ export class CTAScreen {
   private introTimer = 0;
   private glowStrength = 0;
   private cardCenterY = GAME_HEIGHT * 0.52;
+  private timeline?: gsap.core.Timeline;
 
   constructor() {
     this.container = new Container();
@@ -103,17 +105,8 @@ export class CTAScreen {
   update(dt: number) {
     if (!this.container.visible) return;
     this.introTimer += dt;
-    const introT = Math.min(this.introTimer / 0.48, 1);
-    const eased = 1 - Math.pow(1 - introT, 3);
-    this.content.alpha = eased;
-    this.content.scale.set(0.9 + eased * 0.1);
-    this.content.x = (GAME_WIDTH * (1 - this.content.scale.x)) / 2 * (1 - eased);
-    this.content.y = (GAME_HEIGHT * (1 - this.content.scale.y)) / 2 * (1 - eased);
-
     this.pulseTimer += dt;
     const pulse = Math.sin(this.pulseTimer * 5.2) * 0.5 + 0.5;
-    const scale = 1.08 + Math.sin(this.pulseTimer * 6.3) * 0.035;
-    this.buttonContainer.scale.set(scale);
     this.glowStrength = 0.16 + pulse * 0.12;
     this.heroGlow.clear();
     this.heroGlow.roundRect(
@@ -128,13 +121,36 @@ export class CTAScreen {
   }
 
   show() {
+    this.hide();
     this.introTimer = 0;
     this.pulseTimer = 0;
     this.glowStrength = 0;
-    this.content.alpha = 0;
-    this.content.scale.set(0.9);
+    this.container.visible = true;
+    this.container.alpha = 0;
+    this.content.alpha = 1;
+    this.content.scale.set(0.92);
     this.content.x = GAME_WIDTH * 0.04;
     this.content.y = GAME_HEIGHT * 0.028;
+    this.buttonContainer.scale.set(0.94);
+
+    this.timeline = gsap.timeline();
+    this.timeline.to(this.container, { alpha: 1, duration: 0.22, ease: "power1.out" }, 0);
+    this.timeline.to(this.content, { x: 0, y: 0, duration: 0.45, ease: "back.out(1.7)" }, 0.08);
+    this.timeline.to(
+      this.content.scale,
+      { x: 1, y: 1, duration: 0.7, ease: "back.out(1.5)" },
+      0.08
+    );
+    this.timeline.to(
+      this.buttonContainer.scale,
+      { x: 1, y: 1, duration: 0.45, ease: "back.out(1.7)" },
+      0.28
+    );
+    this.timeline.to(
+      this.buttonContainer.scale,
+      { x: 1.04, y: 1.04, duration: 1.25, yoyo: true, repeat: -1, ease: "sine.inOut" },
+      0.82
+    );
   }
 
   triggerCTA() {
@@ -186,6 +202,24 @@ export class CTAScreen {
 
   onResize() {
     this.layoutOverlay();
+  }
+
+  hide() {
+    this.timeline?.kill();
+    this.timeline = undefined;
+
+    this.container.visible = false;
+    this.container.alpha = 1;
+
+    this.content.alpha = 1;
+    this.content.scale.set(1);
+    this.content.x = 0;
+    this.content.y = 0;
+
+    this.buttonContainer.scale.set(1);
+
+    this.introTimer = 0;
+    this.pulseTimer = 0;
   }
 
   private layoutOverlay() {
